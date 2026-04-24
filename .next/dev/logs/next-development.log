@@ -1,0 +1,25 @@
+{"timestamp":"00:00:33.318","source":"Server","level":"LOG","message":"It looks like you're trying to use TypeScript but do not have the required package(s) installed.\nInstalling dependencies\n\nIf you are not trying to use TypeScript, please remove the tsconfig.json file from your package root (and any TypeScript files in your app and pages directories).\n"}
+{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":"Installing devDependencies (npm):"}
+{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":"- typescript"}
+{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":"- @types/react"}
+{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":"- @types/node"}
+{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:49.638","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:49.642","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:49.642","source":"Server","level":"LOG","message":"  We detected TypeScript in your project and created a tsconfig.json file for you."}
+{"timestamp":"00:00:49.716","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:51.257","source":"Server","level":"ERROR","message":"⨯ Error: The default export is not a React Component in \"/page\""}
+{"timestamp":"00:00:51.459","source":"Server","level":"ERROR","message":"⨯ Error: The default export is not a React Component in \"/page\""}
+{"timestamp":"00:00:52.504","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught Error: The default export is not a React Component in \\\"/page\\\"\\u001b[39m\""}
+{"timestamp":"00:00:52.505","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught Error: The default export is not a React Component in \"/page\"\u001b[39m"}
+{"timestamp":"00:00:52.505","source":"Browser","level":"ERROR","message":"uncaughtError: Error: The default export is not a React Component in \"/page\""}
+{"timestamp":"00:01:05.669","source":"Server","level":"ERROR","message":"⨯ Error: The default export is not a React Component in \"/page\""}
+{"timestamp":"00:01:05.895","source":"Server","level":"ERROR","message":"⨯ Error: The default export is not a React Component in \"/page\""}
+{"timestamp":"00:01:05.971","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught Error: The default export is not a React Component in \\\"/page\\\"\\u001b[39m\""}
+{"timestamp":"00:01:05.971","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught Error: The default export is not a React Component in \"/page\"\u001b[39m"}
+{"timestamp":"00:01:06.016","source":"Browser","level":"ERROR","message":"uncaughtError: Error: The default export is not a React Component in \"/page\""}
+{"timestamp":"00:02:14.333","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:03:16.912","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:03:26.260","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:03:31.480","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}

@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///home/user/my_app/lib/registry.tsx"],"sourcesContent":["'use client'\n\nimport React, { useState } from 'react'\nimport { useServerInsertedHTML } from 'next/navigation'\nimport { StyleRegistry, createStyleRegistry } from 'styled-jsx'\n\nexport default function StyledJsxRegistry({ children }: { children: React.ReactNode }) {\n  const [jsxStyleRegistry] = useState(() => createStyleRegistry())\n\n  useServerInsertedHTML(() => {\n    const styles = jsxStyleRegistry.styles()\n    jsxStyleRegistry.flush()\n    return <>{styles}</>\n  })\n\n  return <StyleRegistry registry={jsxStyleRegistry}>{children}</StyleRegistry>\n}"],"names":["StyledJsxRegistry","children","jsxStyleRegistry","styles","flush","registry"],"mappings":";;;;;AAEA;AACA;AACA;;;AAJA;;;;AAMe,SAASA,kBAAkB,EAAEC,QAAQ,EAAiC;;IACnF,MAAM,CAACC,iBAAiB,GAAG,IAAA,yKAAQ;sCAAC,IAAM,IAAA,wLAAmB;;IAE7D,IAAA,8JAAqB;mDAAC;YACpB,MAAMC,SAASD,iBAAiBC,MAAM;YACtCD,iBAAiBE,KAAK;YACtB,qBAAO;0BAAGD;;QACZ;;IAEA,qBAAO,6LAAC,kLAAa;QAACE,UAAUH;kBAAmBD;;;;;;AACrD;GAVwBD;;QAGtB,8JAAqB;;;KAHCA"}}]
+}
