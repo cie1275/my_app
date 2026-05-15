@@ -1,13 +1,18 @@
 // app/page.tsx
+'use client'
+
+import { useState } from 'react'
 import BottomNav from "../components/BottomNav";
+import WeatherCard from "../components/WeatherCard";
+import CoordCard from "../components/CoordCard";
 
 export default function Home() {
+  const [prefecture, setPrefecture] = useState<string>('東京都')
+
   return (
     <main style={{ paddingBottom: '100px' }}>
-      <h1>ホーム画面</h1>
-      <p>Next.js 16 (Turbopack) が正常に起動しました！</p>
-      
-      {/* 下部ナビゲーションを表示 */}
+      <CoordCard onPrefectureFound={setPrefecture} />
+      <WeatherCard prefecture={prefecture} />
       <BottomNav />
     </main>
   );
