@@ -1,25 +1,20 @@
-{"timestamp":"00:00:33.318","source":"Server","level":"LOG","message":"It looks like you're trying to use TypeScript but do not have the required package(s) installed.\nInstalling dependencies\n\nIf you are not trying to use TypeScript, please remove the tsconfig.json file from your package root (and any TypeScript files in your app and pages directories).\n"}
-{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":"Installing devDependencies (npm):"}
-{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":"- typescript"}
-{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":"- @types/react"}
-{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":"- @types/node"}
-{"timestamp":"00:00:33.378","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:49.638","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:49.642","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:49.642","source":"Server","level":"LOG","message":"  We detected TypeScript in your project and created a tsconfig.json file for you."}
-{"timestamp":"00:00:49.716","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:51.257","source":"Server","level":"ERROR","message":"⨯ Error: The default export is not a React Component in \"/page\""}
-{"timestamp":"00:00:51.459","source":"Server","level":"ERROR","message":"⨯ Error: The default export is not a React Component in \"/page\""}
-{"timestamp":"00:00:52.504","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught Error: The default export is not a React Component in \\\"/page\\\"\\u001b[39m\""}
-{"timestamp":"00:00:52.505","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught Error: The default export is not a React Component in \"/page\"\u001b[39m"}
-{"timestamp":"00:00:52.505","source":"Browser","level":"ERROR","message":"uncaughtError: Error: The default export is not a React Component in \"/page\""}
-{"timestamp":"00:01:05.669","source":"Server","level":"ERROR","message":"⨯ Error: The default export is not a React Component in \"/page\""}
-{"timestamp":"00:01:05.895","source":"Server","level":"ERROR","message":"⨯ Error: The default export is not a React Component in \"/page\""}
-{"timestamp":"00:01:05.971","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught Error: The default export is not a React Component in \\\"/page\\\"\\u001b[39m\""}
-{"timestamp":"00:01:05.971","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught Error: The default export is not a React Component in \"/page\"\u001b[39m"}
-{"timestamp":"00:01:06.016","source":"Browser","level":"ERROR","message":"uncaughtError: Error: The default export is not a React Component in \"/page\""}
-{"timestamp":"00:02:14.333","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
-{"timestamp":"00:03:16.912","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
-{"timestamp":"00:03:26.260","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
-{"timestamp":"00:03:31.480","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:00:04.375","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:05.745","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:06:01.257","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:11:10.645","source":"Server","level":"LOG","message":"✓ Compiled in 12ms"}
+{"timestamp":"00:11:31.093","source":"Server","level":"LOG","message":"✓ Compiled in 81ms"}
+{"timestamp":"00:11:31.499","source":"Browser","level":"ERROR","message":"The final argument passed to %s changed size between renders. The order and size of this array must remain constant.\n\nPrevious: %s\nIncoming: %s useEffect [] [東京都]"}
+{"timestamp":"00:11:32.992","source":"Server","level":"ERROR","message":"[browser] \"The final argument passed to useEffect changed size between renders. The order and size of this array must remain constant.\\n\\nPrevious: []\\nIncoming: [東京都]\" \"\\n\\u001b[31m    at WeatherCard (components/WeatherCard.tsx:35:12)\\n    at Set.forEach (<anonymous>)\\u001b[39m\\n  \\u001b[90m33 |\\u001b[0m   \\u001b[36mconst\\u001b[0m [error, setError] = useState<string | \\u001b[36mnull\\u001b[0m>(\\u001b[36mnull\\u001b[0m)\\n  \\u001b[90m34 |\\u001b[0m\\n\\u001b[31m\\u001b[1m>\\u001b[0m \\u001b[90m35 |\\u001b[0m   useEffect(() => {\\n  \\u001b[90m   |\\u001b[0m            \\u001b[31m\\u001b[1m^\\u001b[0m\\n  \\u001b[90m36 |\\u001b[0m     \\u001b[36mconst\\u001b[0m cityId = getCityCode(prefecture)\\n  \\u001b[90m37 |\\u001b[0m     setLoading(\\u001b[36mtrue\\u001b[0m)\\n  \\u001b[90m38 |\\u001b[0m\" \"\\u001b[2m(components/WeatherCard.tsx:35:12)\\u001b[22m\""}
+{"timestamp":"00:11:32.992","source":"Browser","level":"ERROR","message":"The final argument passed to useEffect changed size between renders. The order and size of this array must remain constant.\n\nPrevious: []\nIncoming: [東京都] \"\\n\\u001b[31m    at WeatherCard (components/WeatherCard.tsx:35:12)\\n    at Set.forEach (<anonymous>)\\u001b[39m\\n  \\u001b[90m33 |\\u001b[0m   \\u001b[36mconst\\u001b[0m [error, setError] = useState<string | \\u001b[36mnull\\u001b[0m>(\\u001b[36mnull\\u001b[0m)\\n  \\u001b[90m34 |\\u001b[0m\\n\\u001b[31m\\u001b[1m>\\u001b[0m \\u001b[90m35 |\\u001b[0m   useEffect(() => {\\n  \\u001b[90m   |\\u001b[0m            \\u001b[31m\\u001b[1m^\\u001b[0m\\n  \\u001b[90m36 |\\u001b[0m     \\u001b[36mconst\\u001b[0m cityId = getCityCode(prefecture)\\n  \\u001b[90m37 |\\u001b[0m     setLoading(\\u001b[36mtrue\\u001b[0m)\\n  \\u001b[90m38 |\\u001b[0m\" \"\\u001b[2m(components/WeatherCard.tsx:35:12)\\u001b[22m\""}
+{"timestamp":"00:11:34.596","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:13:36.846","source":"Server","level":"LOG","message":"✓ Compiled in 364ms"}
+{"timestamp":"00:13:54.473","source":"Server","level":"LOG","message":"✓ Compiled in 10ms"}
+{"timestamp":"00:13:57.459","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:14:11.534","source":"Server","level":"LOG","message":"✓ Compiled in 9ms"}
+{"timestamp":"00:14:22.254","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:43:05.118","source":"Server","level":"LOG","message":"  Reload env: .env.local"}
+{"timestamp":"00:58:53.056","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"01:02:12.568","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"01:02:16.085","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"01:03:02.026","source":"Server","level":"LOG","message":"✓ Compiled in 51ms"}
+{"timestamp":"01:03:04.849","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
