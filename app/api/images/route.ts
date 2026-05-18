@@ -4,8 +4,8 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import s3Client from "../../../lib/s3";
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME!;
+const REGION = process.env.AWS_REGION!;
 
-// 画像をS3に保存
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -31,7 +31,9 @@ export async function POST(request: NextRequest) {
       })
     );
 
-    return NextResponse.json({ success: true, key });
+    const url = `https://${BUCKET_NAME}.s3.${REGION}.amazonaws.com/${key}`;
+
+    return NextResponse.json({ success: true, key, url });
   } catch (error) {
     return NextResponse.json({ error: "保存に失敗しました" }, { status: 500 });
   }
