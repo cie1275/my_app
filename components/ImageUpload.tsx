@@ -18,6 +18,16 @@ type AnalysisResult = {
   }[]
 }
 
+type FavoriteItem = {
+  id: string
+  savedAt: string
+  image: string
+  category?: string
+  color?: string
+  season?: string
+  style?: string[]
+}
+
 type Props = {
   onUploadComplete: (url: string, key: string, analysis: AnalysisResult) => void
   label?: string
@@ -32,6 +42,11 @@ export default function ImageUpload({
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
+  const [favItems, setFavItems] = useState<FavoriteItem[]>(() => {
+    if (typeof window === 'undefined') return []
+    const saved = localStorage.getItem('favorites_item')
+    return saved ? JSON.parse(saved) : []
+  })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
@@ -40,14 +55,12 @@ export default function ImageUpload({
     setUploading(true)
     setAnalysis(null)
 
-    // プレビュー表示
     const reader = new FileReader()
     reader.onload = async (e) => {
       const base64 = e.target?.result as string
       setPreview(base64)
 
       try {
-        // S3にアップロード
         const formData = new FormData()
         formData.append('file', file)
         const uploadRes = await fetch('/api/images', {
@@ -56,7 +69,6 @@ export default function ImageUpload({
         })
         const uploadJson = await uploadRes.json()
 
-        // Bedrockで解析
         const analyzeRes = await fetch('/api/analyze-clothes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -80,6 +92,32 @@ export default function ImageUpload({
     }
     reader.readAsDataURL(file)
   }
+
+  const toggleFavoriteItem = (result: AnalysisResult) => {
+    const existing = favItems.find(
+      (f) => f.category === result.category && f.color === result.color
+    )
+    let updated: FavoriteItem[]
+    if (existing) {
+      updated = favItems.filter((f) => f.id !== existing.id)
+    } else {
+      const newFav: FavoriteItem = {
+        id: Date.now().toString(),
+        savedAt: new Date().toISOString(),
+        image: preview ?? '',
+        category: result.category,
+        color: result.color,
+        season: result.season,
+        style: result.style,
+      }
+      updated = [newFav, ...favItems]
+    }
+    setFavItems(updated)
+    localStorage.setItem('favorites_item', JSON.stringify(updated))
+  }
+
+  const isItemFavorited = (result: AnalysisResult) =>
+    favItems.some((f) => f.category === result.category && f.color === result.color)
 
   return (
     <div style={{
@@ -105,13 +143,9 @@ export default function ImageUpload({
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           style={{
-            flex: 1,
-            padding: '10px',
-            borderRadius: '8px',
-            border: '1px solid #ddd',
-            background: '#f5f5f5',
-            cursor: 'pointer',
-            fontSize: '13px',
+            flex: 1, padding: '10px', borderRadius: '8px',
+            border: '1px solid #ddd', background: '#f5f5f5',
+            cursor: 'pointer', fontSize: '13px',
           }}
         >
           📁 ギャラリー
@@ -120,13 +154,9 @@ export default function ImageUpload({
           onClick={() => cameraInputRef.current?.click()}
           disabled={uploading}
           style={{
-            flex: 1,
-            padding: '10px',
-            borderRadius: '8px',
-            border: '1px solid #ddd',
-            background: '#f5f5f5',
-            cursor: 'pointer',
-            fontSize: '13px',
+            flex: 1, padding: '10px', borderRadius: '8px',
+            border: '1px solid #ddd', background: '#f5f5f5',
+            cursor: 'pointer', fontSize: '13px',
           }}
         >
           📷 カメラ
@@ -134,15 +164,27 @@ export default function ImageUpload({
       </div>
 
       {uploading && (
-        <p style={{ textAlign: 'center', color: '#888', fontSize: '13px' }}>
-          解析中...
-        </p>
+        <p style={{ textAlign: 'center', color: '#888', fontSize: '13px' }}>解析中...</p>
       )}
 
-      {/* 解析結果表示 */}
       {analysis && (
         <div style={{ marginTop: '12px', fontSize: '13px' }}>
-          <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>解析結果：</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <p style={{ fontWeight: 'bold' }}>解析結果：</p>
+            {/* 服単体のみお気に入りボタン表示 */}
+            {mode === 'single' && (
+              <button
+                onClick={() => toggleFavoriteItem(analysis)}
+                style={{
+                  border: 'none', background: 'none',
+                  fontSize: '22px', cursor: 'pointer', padding: 0,
+                }}
+              >
+                {isItemFavorited(analysis) ? '❤️' : '🤍'}
+              </button>
+            )}
+          </div>
+
           {mode === 'single' ? (
             <div style={{ background: '#f9f9f9', borderRadius: '8px', padding: '10px' }}>
               <p>カテゴリ：{analysis.category}</p>
