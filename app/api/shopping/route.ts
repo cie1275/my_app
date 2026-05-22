@@ -1,7 +1,7 @@
-// app/api/rakuten/route.ts
+// app/api/shopping/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
-const RAKUTEN_APP_ID = process.env.RAKUTEN_APP_ID!;
+const YAHOO_CLIENT_ID = process.env.YAHOO_CLIENT_ID!;
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,9 +9,10 @@ export async function GET(request: NextRequest) {
     const keyword = searchParams.get("keyword") ?? "";
 
     const res = await fetch(
-      `https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706?applicationId=${RAKUTEN_APP_ID}&keyword=${encodeURIComponent(keyword)}&genreId=100371&hits=6&imageFlag=1`
+      `https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch?appid=${YAHOO_CLIENT_ID}&query=${encodeURIComponent(keyword)}&results=3&image_size=200`,
     );
     const data = await res.json();
+    console.log('Yahoo!ショッピングAPIレスポンス:', JSON.stringify(data).slice(0, 500));
 
     return NextResponse.json({ success: true, data });
   } catch (error) {

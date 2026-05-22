@@ -25,9 +25,10 @@ type WeatherData = {
 
 type Props = {
   prefecture: string
+  onWeatherLoaded?: (telop: string, temperature: string) => void
 }
 
-export default function WeatherCard({ prefecture }: Props) {
+export default function WeatherCard({ prefecture, onWeatherLoaded }: Props) {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -41,6 +42,15 @@ export default function WeatherCard({ prefecture }: Props) {
         const res = await fetch(`/api/weather?cityId=${cityId}`)
         const json = await res.json()
         setWeather(json.data)
+
+        // 親コンポーネントに天気データを渡す
+        if (onWeatherLoaded && json.data?.forecasts?.[0]) {
+          const today = json.data.forecasts[0]
+          onWeatherLoaded(
+            today.telop,
+            today.temperature.max.celsius ?? '20'
+          )
+        }
       } catch {
         setError('天気の取得に失敗しました')
       } finally {

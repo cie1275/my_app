@@ -1,3 +1,4 @@
+// components/BottomNav.tsx
 "use client";
 
 import Link from "next/link";
@@ -6,7 +7,6 @@ import { usePathname } from "next/navigation";
 type NavItem = {
   href: string;
   label: string;
-  icon: React.ReactNode;
 };
 
 const HomeIcon = ({ active }: { active: boolean }) => (
@@ -73,38 +73,18 @@ const ProfileIcon = ({ active }: { active: boolean }) => (
 );
 
 const NAV_ITEMS: NavItem[] = [
-  {
-    href: "/",
-    label: "ホーム",
-    icon: null, // rendered dynamically
-  },
-  {
-    href: "/coordinates",
-    label: "コーデ",
-    icon: null,
-  },
-  {
-    href: "/closet",
-    label: "クローゼット",
-    icon: null,
-  },
-  {
-    href: "/favorites",
-    label: "お気に入り",
-    icon: null,
-  },
-  {
-    href: "/profile",
-    label: "プロフィール",
-    icon: null,
-  },
+  { href: "/", label: "ホーム" },
+  { href: "/coorde", label: "コーデ" },
+  { href: "/closet", label: "クローゼット" },
+  { href: "/favorites", label: "お気に入り" },
+  { href: "/profile", label: "プロフィール" },
 ];
 
 function NavIcon({ href, active }: { href: string; active: boolean }) {
   switch (href) {
     case "/":
       return <HomeIcon active={active} />;
-    case "/coordinates":
+    case "/coorde":
       return <CoordIcon active={active} />;
     case "/closet":
       return <ClosetIcon active={active} />;
