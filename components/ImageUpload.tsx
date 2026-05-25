@@ -63,20 +63,13 @@ export default function ImageUpload({
       try {
         const formData = new FormData()
         formData.append('file', file)
-        const uploadRes = await fetch('/api/images', {
-          method: 'POST',
-          body: formData,
-        })
+        const uploadRes = await fetch('/api/images', { method: 'POST', body: formData })
         const uploadJson = await uploadRes.json()
 
         const analyzeRes = await fetch('/api/analyze-clothes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageBase64: base64.split(',')[1],
-            imageType: file.type,
-            mode,
-          }),
+          body: JSON.stringify({ imageBase64: base64.split(',')[1], imageType: file.type, mode }),
         })
         const analyzeJson = await analyzeRes.json()
 
@@ -121,31 +114,33 @@ export default function ImageUpload({
 
   return (
     <div style={{
+      margin: '12px 16px',
       background: '#fff',
-      borderRadius: '12px',
-      padding: '16px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      maxWidth: '360px',
-      margin: '16px auto',
+      borderRadius: '16px',
+      padding: '20px',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
     }}>
-      <h2 style={{ fontSize: '14px', color: '#888', marginBottom: '12px' }}>{label}</h2>
+      <p style={{ fontSize: '11px', color: '#AAA', marginBottom: '14px', letterSpacing: '0.05em' }}>
+        {label.toUpperCase()}
+      </p>
 
       {preview && (
         <img
           src={preview}
           alt="プレビュー"
-          style={{ width: '100%', borderRadius: '8px', marginBottom: '12px' }}
+          style={{ width: '100%', borderRadius: '12px', marginBottom: '14px', maxHeight: '220px', objectFit: 'cover' }}
         />
       )}
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           style={{
-            flex: 1, padding: '10px', borderRadius: '8px',
-            border: '1px solid #ddd', background: '#f5f5f5',
-            cursor: 'pointer', fontSize: '13px',
+            flex: 1, padding: '12px', borderRadius: '10px',
+            border: '1.5px solid #E8E4DE', background: '#FAFAF8',
+            cursor: 'pointer', fontSize: '13px', color: '#555',
+            fontWeight: '500',
           }}
         >
           📁 ギャラリー
@@ -154,9 +149,10 @@ export default function ImageUpload({
           onClick={() => cameraInputRef.current?.click()}
           disabled={uploading}
           style={{
-            flex: 1, padding: '10px', borderRadius: '8px',
-            border: '1px solid #ddd', background: '#f5f5f5',
-            cursor: 'pointer', fontSize: '13px',
+            flex: 1, padding: '12px', borderRadius: '10px',
+            border: '1.5px solid #E8E4DE', background: '#FAFAF8',
+            cursor: 'pointer', fontSize: '13px', color: '#555',
+            fontWeight: '500',
           }}
         >
           📷 カメラ
@@ -164,21 +160,19 @@ export default function ImageUpload({
       </div>
 
       {uploading && (
-        <p style={{ textAlign: 'center', color: '#888', fontSize: '13px' }}>解析中...</p>
+        <div style={{ textAlign: 'center', padding: '12px 0', color: '#AAA', fontSize: '13px' }}>
+          解析中...
+        </div>
       )}
 
       {analysis && (
-        <div style={{ marginTop: '12px', fontSize: '13px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <p style={{ fontWeight: 'bold' }}>解析結果：</p>
-            {/* 服単体のみお気に入りボタン表示 */}
+        <div style={{ marginTop: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <p style={{ fontSize: '12px', fontWeight: '600', color: '#1A2238' }}>解析結果</p>
             {mode === 'single' && (
               <button
                 onClick={() => toggleFavoriteItem(analysis)}
-                style={{
-                  border: 'none', background: 'none',
-                  fontSize: '22px', cursor: 'pointer', padding: 0,
-                }}
+                style={{ border: 'none', background: 'none', fontSize: '20px', cursor: 'pointer', padding: 0 }}
               >
                 {isItemFavorited(analysis) ? '❤️' : '🤍'}
               </button>
@@ -186,23 +180,36 @@ export default function ImageUpload({
           </div>
 
           {mode === 'single' ? (
-            <div style={{ background: '#f9f9f9', borderRadius: '8px', padding: '10px' }}>
-              <p>カテゴリ：{analysis.category}</p>
-              <p>色：{analysis.color}</p>
-              <p>季節：{analysis.season}</p>
-              <p>系統：{analysis.style?.join('・')}</p>
-              <p>確信度：{analysis.confidence}</p>
+            <div style={{ background: '#FAFAF8', borderRadius: '10px', padding: '12px', fontSize: '13px', color: '#444' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ color: '#AAA' }}>カテゴリ</span><span>{analysis.category}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ color: '#AAA' }}>色</span><span>{analysis.color}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ color: '#AAA' }}>季節</span><span>{analysis.season}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#AAA' }}>系統</span><span>{analysis.style?.join(' / ')}</span>
+              </div>
             </div>
           ) : (
             <div>
-              <p>全体の系統：{analysis.style?.join('・')}</p>
+              <p style={{ fontSize: '12px', color: '#AAA', marginBottom: '8px' }}>
+                全体の系統：{analysis.style?.join(' / ')}
+              </p>
               {analysis.items?.map((item, i) => (
-                <div key={i} style={{ background: '#f9f9f9', borderRadius: '8px', padding: '10px', marginTop: '8px' }}>
-                  <p>カテゴリ：{item.category}</p>
-                  <p>色：{item.color}</p>
-                  <p>季節：{item.season}</p>
-                  <p>系統：{item.style?.join('・')}</p>
-                  <p>確信度：{item.confidence}</p>
+                <div key={i} style={{ background: '#FAFAF8', borderRadius: '10px', padding: '12px', marginBottom: '8px', fontSize: '13px', color: '#444' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ color: '#AAA' }}>カテゴリ</span><span>{item.category}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ color: '#AAA' }}>色</span><span>{item.color}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#AAA' }}>季節</span><span>{item.season}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -210,21 +217,10 @@ export default function ImageUpload({
         </div>
       )}
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        style={{ display: 'none' }}
-        onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
-      />
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{ display: 'none' }}
-        onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+        onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+        onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
     </div>
   )
 }
