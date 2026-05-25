@@ -2,11 +2,10 @@
 'use client'
 
 import { useState } from 'react'
-import BottomNav from "../components/BottomNav";
-import WeatherCard from "../components/WeatherCard";
-import CoordCard from "../components/CoordCard";
-import ImageUpload from "../components/ImageUpload";
-import OutfitSuggest from "../components/OutfitSuggest";
+import BottomNav from '../components/BottomNav'
+import WeatherCard from '../components/WeatherCard'
+import CoordCard from '../components/CoordCard'
+import ImageUpload from '../components/ImageUpload'
 
 type Cloth = {
   id: string
@@ -18,55 +17,56 @@ type Cloth = {
 
 export default function Home() {
   const [prefecture, setPrefecture] = useState<string>('東京都')
-  const [weather, setWeather] = useState<string>('')
-  const [temperature, setTemperature] = useState<string>('')
-  const [clothes, setClothes] = useState<Cloth[]>([])
-
-  const handleUploadComplete = (url: string, key: string, analysis: any) => {
-    if (analysis?.items) {
-      // コーディネート全体の場合
-      const newClothes = analysis.items.map((item: any, i: number) => ({
-        id: `${Date.now()}_${i}`,
-        category: item.category,
-        color: item.color,
-        season: item.season,
-        style: item.style ?? [],
-      }))
-      setClothes(prev => [...prev, ...newClothes])
-    } else if (analysis) {
-      // 服単体の場合
-      setClothes(prev => [...prev, {
-        id: `${Date.now()}`,
-        category: analysis.category,
-        color: analysis.color,
-        season: analysis.season,
-        style: analysis.style ?? [],
-      }])
-    }
-  }
 
   return (
-    <main style={{ paddingBottom: '100px' }}>
-      <h1>ホーム画面</h1>
+    <main style={{
+      background: '#FAFAFA',
+      minHeight: '100vh',
+      paddingBottom: '80px',
+    }}>
+      {/* ヘッダー */}
+      <header style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '16px 20px 12px',
+        background: '#fff',
+        borderBottom: '1px solid #F0F0F0',
+      }}>
+        <h1 style={{
+          fontSize: '20px',
+          fontWeight: '700',
+          letterSpacing: '0.12em',
+          color: '#1A2238',
+          margin: 0,
+        }}>
+          COORDI
+        </h1>
+        <button style={{
+          background: 'none',
+          border: 'none',
+          fontSize: '20px',
+          cursor: 'pointer',
+          color: '#555',
+        }}>
+          🔔
+        </button>
+      </header>
+
+      {/* 現在地 */}
       <CoordCard onPrefectureFound={setPrefecture} />
-      <WeatherCard
-        prefecture={prefecture}
-        onWeatherLoaded={(telop, temp) => {
-          setWeather(telop)
-          setTemperature(temp)
-        }}
-      />
+
+      {/* 天気 */}
+      <WeatherCard prefecture={prefecture} />
+
+      {/* 服のアップロード */}
       <ImageUpload
         label="服の画像をアップロード"
         mode="coordinate"
-        onUploadComplete={handleUploadComplete}
+        onUploadComplete={() => {}}
       />
-      <OutfitSuggest
-        weather={weather}
-        temperature={temperature}
-        clothes={clothes}
-      />
+
       <BottomNav />
     </main>
-  );
+  )
 }
