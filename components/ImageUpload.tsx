@@ -29,7 +29,7 @@ type FavoriteItem = {
 }
 
 type Props = {
-  onUploadComplete: (url: string, key: string, analysis: AnalysisResult) => void
+  onUploadComplete: (url: string, key: string, analysis: AnalysisResult, base64?: string) => void
   label?: string
   mode?: 'single' | 'coordinate'
 }
@@ -75,7 +75,7 @@ export default function ImageUpload({
 
         if (analyzeJson.success) {
           setAnalysis(analyzeJson.result)
-          onUploadComplete(uploadJson.url, uploadJson.key, analyzeJson.result)
+          onUploadComplete(uploadJson.url, uploadJson.key, analyzeJson.result, base64)
         }
       } catch (error) {
         console.error('エラー:', error)

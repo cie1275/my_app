@@ -34,13 +34,21 @@ type Suggestion = {
   buy_suggestions: BuySuggestion[]
 }
 
+type ImageCredit = {
+  name: string
+  link: string
+}
+
 type Message = {
   id: string
   role: 'user' | 'assistant'
   type: 'text' | 'suggestion'
   content?: string
   suggestion?: Suggestion
-  image?: string
+  attachedImage?: string
+  generatedImage?: string
+  imageCredit?: ImageCredit
+  generatingImage?: boolean
   saved?: boolean
 }
 
@@ -67,8 +75,8 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
     },
   ])
   const [loading, setLoading] = useState(false)
-  const [totalBudget, setTotalBudget] = useState<string>('')
-  const [itemBudget, setItemBudget] = useState<string>('')
+  const [totalBudget, setTotalBudget] = useState('')
+  const [itemBudget, setItemBudget] = useState('')
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -77,24 +85,55 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
+  const fetchOutfitImage = async (
+    msgId: string,
+    suggestion: Suggestion,
+    items: { category: string; color: string }[]
+  ) => {
+    setMessages(prev => prev.map(m =>
+      m.id === msgId ? { ...m, generatingImage: true } : m
+    ))
+    try {
+      const res = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ style: suggestion.style, items }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setMessages(prev => prev.map(m =>
+          m.id === msgId
+            ? { ...m, generatedImage: json.image, imageCredit: json.credit, generatingImage: false }
+            : m
+        ))
+      } else {
+        setMessages(prev => prev.map(m =>
+          m.id === msgId ? { ...m, generatingImage: false } : m
+        ))
+      }
+    } catch {
+      setMessages(prev => prev.map(m =>
+        m.id === msgId ? { ...m, generatingImage: false } : m
+      ))
+    }
+  }
+
   const handleSuggest = async () => {
     if (loading) return
     setLoading(true)
 
-    // ユーザーメッセージ
-    const userContent = [
-      uploadedImage ? '📷 画像あり' : null,
-      totalBudget ? `全体予算：¥${Number(totalBudget).toLocaleString()}` : null,
-      itemBudget ? `アイテム予算：¥${Number(itemBudget).toLocaleString()}` : null,
-      '👗 コーデを提案して',
-    ].filter(Boolean).join('　')
+    const parts: string[] = []
+    if (uploadedImage) parts.push('📷 画像あり')
+    if (totalBudget) parts.push(`全体予算：¥${Number(totalBudget).toLocaleString()}`)
+    if (itemBudget) parts.push(`アイテム予算：¥${Number(itemBudget).toLocaleString()}`)
+    parts.push('👗 コーデを提案して')
 
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
       type: 'text',
-      content: userContent,
-      image: uploadedImage ?? undefined,
+      content: parts.join('　'),
+      attachedImage: uploadedImage ?? undefined,
     }
     setMessages(prev => [...prev, userMsg])
 
@@ -112,22 +151,29 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
       })
       const json = await res.json()
       if (json.success) {
+        const msgId = (Date.now() + 1).toString()
         const assistantMsg: Message = {
-          id: (Date.now() + 1).toString(),
+          id: msgId,
           role: 'assistant',
           type: 'suggestion',
-          suggestion: json.suggestion,
-          image: uploadedImage ?? undefined,
+          suggestion: json.suggestion as Suggestion,
+          attachedImage: uploadedImage ?? undefined,
+          generatingImage: false,
           saved: false,
         }
         setMessages(prev => [...prev, assistantMsg])
+
+        const items: { category: string; color: string }[] = (json.suggestion.buy_suggestions as BuySuggestion[]).map(item => ({
+          category: item.category,
+          color: item.color,
+        }))
+        fetchOutfitImage(msgId, json.suggestion as Suggestion, items)
       }
-    } catch (error) {
-      console.error('提案エラー:', error)
+    } catch {
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        type: 'text',
+        role: 'assistant' as const,
+        type: 'text' as const,
         content: '提案の取得に失敗しました。もう一度お試しください。',
       }])
     } finally {
@@ -138,18 +184,17 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
 
   const handleSave = (msg: Message) => {
     if (!msg.suggestion || !onSuggestionComplete) return
-    const items = msg.suggestion.buy_suggestions.map((item) => ({
+    const items: { category: string; color: string }[] = msg.suggestion.buy_suggestions.map(item => ({
       category: item.category,
       color: item.color,
     }))
     onSuggestionComplete(
       msg.suggestion.comment,
       msg.suggestion.style,
-      msg.image,
+      msg.generatedImage ?? msg.attachedImage,
       items,
       msg.suggestion.buy_suggestions
     )
-    // 保存済みフラグ
     setMessages(prev => prev.map(m =>
       m.id === msg.id ? { ...m, saved: true } : m
     ))
@@ -161,31 +206,44 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
     const reader = new FileReader()
     reader.onload = (ev) => setUploadedImage(ev.target?.result as string)
     reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
+  const dotStyle = (delay: string): React.CSSProperties => ({
+    width: '7px',
+    height: '7px',
+    borderRadius: '50%',
+    background: '#CCC',
+    animation: `bounce 1.2s ease-in-out ${delay} infinite`,
+  })
+
+  const dotStyleBrown = (delay: string): React.CSSProperties => ({
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    background: '#7A6552',
+    animation: `bounce 1.2s ease-in-out ${delay} infinite`,
+  })
+
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: 'calc(100vh - 180px)', // ヘッダー+タブ+BottomNav分を引く
-    }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 170px)' }}>
 
       {/* メッセージエリア */}
       <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
+        flex: 1, overflowY: 'auto', padding: '16px',
+        display: 'flex', flexDirection: 'column', gap: '16px',
+        background: '#FAFAFA',
       }}>
         {messages.map((msg) => (
-          <div key={msg.id} style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-          }}>
-            {/* アバター（AI側のみ） */}
+          <div
+            key={msg.id}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+            }}
+          >
+            {/* AIアバター */}
             {msg.role === 'assistant' && (
               <div style={{
                 width: '28px', height: '28px', borderRadius: '50%',
@@ -202,9 +260,7 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
                 maxWidth: '80%',
                 background: msg.role === 'user' ? '#1A2238' : '#fff',
                 color: msg.role === 'user' ? '#fff' : '#333',
-                borderRadius: msg.role === 'user'
-                  ? '18px 18px 4px 18px'
-                  : '4px 18px 18px 18px',
+                borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
                 padding: '12px 16px',
                 fontSize: '14px',
                 lineHeight: 1.6,
@@ -215,21 +271,74 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
               </div>
             )}
 
-            {/* ユーザーの画像 */}
-            {msg.role === 'user' && msg.image && (
-              <img src={msg.image} alt="添付画像"
-                style={{ maxWidth: '160px', borderRadius: '12px', marginTop: '6px', objectFit: 'cover' }} />
+            {/* ユーザー添付画像 */}
+            {msg.role === 'user' && msg.attachedImage && (
+              <img
+                src={msg.attachedImage}
+                alt="添付画像"
+                style={{ maxWidth: '160px', borderRadius: '12px', marginTop: '6px', objectFit: 'cover' }}
+              />
             )}
 
             {/* 提案メッセージ */}
             {msg.type === 'suggestion' && msg.suggestion && (
               <div style={{
-                width: '100%',
-                background: '#fff',
+                width: '100%', background: '#fff',
                 borderRadius: '4px 18px 18px 18px',
-                padding: '16px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+                padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
               }}>
+
+                {/* 画像エリア */}
+                {msg.generatingImage ? (
+                  <div style={{
+                    width: '100%', height: '200px', borderRadius: '12px',
+                    background: '#F0EDE8', marginBottom: '14px',
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  }}>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <div style={dotStyleBrown('0s')} />
+                      <div style={dotStyleBrown('0.2s')} />
+                      <div style={dotStyleBrown('0.4s')} />
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#7A6552' }}>イメージ画像を取得中...</p>
+                  </div>
+                ) : msg.generatedImage ? (
+                  <div style={{ marginBottom: '14px' }}>
+                    <img
+                        src={msg.generatedImage}
+                        alt="コーデイメージ"
+                        style={{
+                          width: '100%', borderRadius: '12px',
+                          objectFit: 'contain', maxHeight: '400px', display: 'block',
+                          background: '#F8F6F3',
+                        }}
+                      />
+                    {msg.imageCredit?.name && (
+                      <p style={{ fontSize: '10px', color: '#CCC', textAlign: 'right', marginTop: '4px' }}>
+                        {'Photo by '}
+                        
+                        <a  href={`${msg.imageCredit.link}?utm_source=coordi_app&utm_medium=referral`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#CCC', textDecoration: 'underline' }}
+                        >
+                          {msg.imageCredit.name}
+                        </a>
+                        {' on '}
+                        
+                        <a  href="https://unsplash.com/?utm_source=coordi_app&utm_medium=referral"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#CCC', textDecoration: 'underline' }}
+                        >
+                          Unsplash
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+
                 {/* コメント */}
                 <p style={{ fontSize: '14px', color: '#333', lineHeight: 1.7, marginBottom: '10px' }}>
                   {msg.suggestion.comment}
@@ -237,30 +346,35 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
 
                 {/* スタイルタグ */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '14px' }}>
-                  {msg.suggestion.style?.map((s, i) => (
-                    <span key={i} style={{
-                      background: '#1A2238', color: '#fff',
-                      borderRadius: '20px', padding: '3px 10px',
-                      fontSize: '11px', letterSpacing: '0.04em',
-                    }}>
+                  {msg.suggestion.style.map((s, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        background: '#1A2238', color: '#fff',
+                        borderRadius: '20px', padding: '3px 10px',
+                        fontSize: '11px', letterSpacing: '0.04em',
+                      }}
+                    >
                       {s}
                     </span>
                   ))}
                 </div>
 
                 {/* 手持ちアイテム */}
-                {msg.suggestion.use_clothes?.length > 0 && (
+                {msg.suggestion.use_clothes.length > 0 && (
                   <div style={{ marginBottom: '14px' }}>
                     <p style={{ fontSize: '11px', color: '#AAA', marginBottom: '8px', letterSpacing: '0.05em' }}>
                       手持ちアイテム
                     </p>
                     {msg.suggestion.use_clothes.map((item, i) => (
-                      <div key={i} style={{
-                        display: 'flex', gap: '10px', alignItems: 'flex-start',
-                        padding: '8px 0',
-                        borderBottom: i < msg.suggestion!.use_clothes.length - 1
-                          ? '1px solid #F5F5F5' : 'none',
-                      }}>
+                      <div
+                        key={i}
+                        style={{
+                          display: 'flex', gap: '10px', alignItems: 'flex-start',
+                          padding: '8px 0',
+                          borderBottom: i < msg.suggestion!.use_clothes.length - 1 ? '1px solid #F5F5F5' : 'none',
+                        }}
+                      >
                         <div style={{
                           width: '32px', height: '32px', borderRadius: '8px',
                           background: '#F0EDE8', display: 'flex',
@@ -281,7 +395,7 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
                 )}
 
                 {/* 購入候補 */}
-                {msg.suggestion.buy_suggestions?.length > 0 && (
+                {msg.suggestion.buy_suggestions.length > 0 && (
                   <div style={{ marginBottom: '14px' }}>
                     <p style={{ fontSize: '11px', color: '#AAA', marginBottom: '8px', letterSpacing: '0.05em' }}>
                       購入候補
@@ -296,20 +410,30 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
                             {item.category}
                           </span>
                           <span style={{ fontSize: '11px', color: '#AAA' }}>{item.color}</span>
-                          {item.type === 'accessory' && <span style={{ fontSize: '11px' }}>💍</span>}
+                          {item.type === 'accessory' && (
+                            <span style={{ fontSize: '11px' }}>💍</span>
+                          )}
                         </div>
                         <p style={{ fontSize: '11px', color: '#BBB', marginBottom: '6px' }}>{item.reason}</p>
-                        {item.rakuten?.map((r, j) => (
-                          <a key={j} href={r.url} target="_blank" rel="noopener noreferrer"
-                            style={{ textDecoration: 'none', color: 'inherit' }}>
+                        {item.rakuten.map((r, j) => (
+                          
+                          <a  key={j}
+                            href={r.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ textDecoration: 'none', color: 'inherit' }}
+                          >
                             <div style={{
                               display: 'flex', gap: '10px', padding: '8px',
                               marginBottom: '6px', border: '1px solid #F0F0F0',
                               borderRadius: '10px', alignItems: 'center',
                             }}>
                               {r.image && (
-                                <img src={r.image} alt={r.name}
-                                  style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
+                                <img
+                                  src={r.image}
+                                  alt={r.name}
+                                  style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }}
+                                />
                               )}
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <p style={{
@@ -320,10 +444,10 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
                                   {r.name}
                                 </p>
                                 <p style={{ fontSize: '12px', color: '#C0392B', fontWeight: '700' }}>
-                                  ¥{r.price.toLocaleString()}
+                                  {'¥'}{r.price.toLocaleString()}
                                 </p>
                               </div>
-                              <span style={{ color: '#CCC', fontSize: '16px', flexShrink: 0 }}>›</span>
+                              <span style={{ color: '#CCC', fontSize: '16px', flexShrink: 0 }}>{'›'}</span>
                             </div>
                           </a>
                         ))}
@@ -354,7 +478,7 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
           </div>
         ))}
 
-        {/* ローディング */}
+        {/* 提案ローディング */}
         {loading && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
             <div style={{
@@ -369,13 +493,9 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
               padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
             }}>
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                {[0, 1, 2].map(i => (
-                  <div key={i} style={{
-                    width: '7px', height: '7px', borderRadius: '50%',
-                    background: '#CCC',
-                    animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-                  }} />
-                ))}
+                <div style={dotStyle('0s')} />
+                <div style={dotStyle('0.2s')} />
+                <div style={dotStyle('0.4s')} />
               </div>
             </div>
           </div>
@@ -385,24 +505,24 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
       </div>
 
       {/* 入力エリア */}
-      <div style={{
-        background: '#fff',
-        borderTop: '1px solid #F0F0F0',
-        padding: '12px 16px',
-      }}>
+      <div style={{ background: '#fff', borderTop: '1px solid #F0F0F0', padding: '12px 16px' }}>
+
         {/* 画像プレビュー */}
         {uploadedImage && (
           <div style={{ position: 'relative', display: 'inline-block', marginBottom: '10px' }}>
-            <img src={uploadedImage} alt="添付画像"
-              style={{ height: '64px', width: '64px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #EEE' }} />
+            <img
+              src={uploadedImage}
+              alt="添付画像"
+              style={{ height: '64px', width: '64px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #EEE' }}
+            />
             <button
               onClick={() => setUploadedImage(null)}
               style={{
                 position: 'absolute', top: '-6px', right: '-6px',
                 background: '#555', color: '#fff', border: 'none',
                 borderRadius: '50%', width: '20px', height: '20px',
-                fontSize: '11px', cursor: 'pointer', display: 'flex',
-                alignItems: 'center', justifyContent: 'center',
+                fontSize: '11px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
               ✕
@@ -410,7 +530,7 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
           </div>
         )}
 
-        {/* 予算入力行 */}
+        {/* 予算入力 */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
           <input
             type="number"
@@ -438,7 +558,6 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
 
         {/* 送信行 */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {/* 画像添付ボタン */}
           <button
             onClick={() => imageInputRef.current?.click()}
             style={{
@@ -451,14 +570,13 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
           >
             📷
           </button>
-
-          {/* 提案ボタン */}
           <button
             onClick={handleSuggest}
             disabled={loading}
             style={{
               flex: 1, padding: '12px', borderRadius: '20px',
-              border: 'none', background: loading ? '#CCC' : '#1A2238',
+              border: 'none',
+              background: loading ? '#CCC' : '#1A2238',
               color: '#fff', fontSize: '14px', fontWeight: '600',
               cursor: loading ? 'not-allowed' : 'pointer',
               letterSpacing: '0.04em',
@@ -469,8 +587,13 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
           </button>
         </div>
 
-        <input ref={imageInputRef} type="file" accept="image/*" style={{ display: 'none' }}
-          onChange={handleImageUpload} />
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleImageUpload}
+        />
       </div>
 
       <style>{`

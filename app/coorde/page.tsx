@@ -39,14 +39,19 @@ export default function CoordePage() {
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null)
   const [favCoords, setFavCoords] = useState<FavoriteCoord[]>([])
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [closetClothes, setClosetClothes] = useState<{
+  id: string; category: string; color: string; season: string; style: string[]
+  }[]>([])
   const imageInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const saved = localStorage.getItem('coorde_history')
-    if (saved) setHistory(JSON.parse(saved))
-    const favs = localStorage.getItem('favorites_coord')
-    if (favs) setFavCoords(JSON.parse(favs))
-  }, [])
+  const saved = localStorage.getItem('coorde_history')
+  if (saved) setHistory(JSON.parse(saved))
+  const favs = localStorage.getItem('favorites_coord')
+  if (favs) setFavCoords(JSON.parse(favs))
+  const closet = localStorage.getItem('closet_clothes')
+  if (closet) setClosetClothes(JSON.parse(closet))
+}, [])
 
   const isFavorited = (id: string) => favCoords.some((f) => f.id === id)
 
@@ -120,7 +125,13 @@ export default function CoordePage() {
   })
 
   return (
-    <main style={{ background: '#FAFAFA', minHeight: '100vh', paddingBottom: '0px' }}>
+    <main style={{
+      background: '#FAFAFA',
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+    }}>
 
       {/* ヘッダー */}
       <header style={{
@@ -130,14 +141,15 @@ export default function CoordePage() {
         padding: '16px 20px 12px',
         background: '#fff',
         borderBottom: '1px solid #F0F0F0',
+        flexShrink: 0,
       }}>
         <h1 style={{ fontSize: '20px', fontWeight: '700', letterSpacing: '0.12em', color: '#1A2238', margin: 0 }}>
-          COORDI
+          L'Atelier
         </h1>
       </header>
 
       {/* タブ */}
-      <div style={{ display: 'flex', background: '#fff', borderBottom: '1px solid #F0F0F0' }}>
+      <div style={{ display: 'flex', background: '#fff', borderBottom: '1px solid #F0F0F0', flexShrink: 0 }}>
         <button style={tabStyle('suggest')} onClick={() => setActiveTab('suggest')}>
           服装提案
         </button>
@@ -146,19 +158,27 @@ export default function CoordePage() {
         </button>
       </div>
 
-      {/* 服装提案タブ：OutfitSuggestのみ */}
+      {/* 服装提案タブ */}
       {activeTab === 'suggest' && (
-        <OutfitSuggest
-          weather=""
-          temperature=""
-          clothes={[]}
-          onSuggestionComplete={handleSuggestionComplete}
-        />
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          paddingBottom: '56px', // BottomNav分
+        }}>
+          <OutfitSuggest
+            weather=""
+            temperature=""
+            clothes={closetClothes}
+            onSuggestionComplete={handleSuggestionComplete}
+          />
+        </div>
       )}
 
       {/* コーデ履歴タブ */}
       {activeTab === 'history' && (
-        <div style={{ padding: '16px', paddingBottom: '100px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px', paddingBottom: '80px' }}>
           {history.length === 0 ? (
             <div style={{ textAlign: 'center', marginTop: '60px', color: '#CCC' }}>
               <p style={{ fontSize: '40px', marginBottom: '12px' }}>👗</p>
@@ -173,20 +193,14 @@ export default function CoordePage() {
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
                 style={{
-                  background: '#fff',
-                  borderRadius: '14px',
-                  padding: '14px',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                  marginBottom: '10px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  gap: '12px',
-                  alignItems: 'center',
+                  background: '#fff', borderRadius: '14px', padding: '14px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: '10px',
+                  cursor: 'pointer', display: 'flex', gap: '12px', alignItems: 'center',
                 }}
               >
                 {item.image ? (
                   <img src={item.image} alt="コーデ画像"
-                    style={{ width: '56px', height: '56px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
+                    style={{ width: '56px', height: '56px', borderRadius: '10px', objectFit: 'contain', background: '#F8F6F3', flexShrink: 0 }} />
                 ) : (
                   <div style={{
                     width: '56px', height: '56px', borderRadius: '10px',
@@ -338,7 +352,7 @@ export default function CoordePage() {
             {selectedItem.image ? (
               <div style={{ position: 'relative', marginBottom: '16px' }}>
                 <img src={selectedItem.image} alt="コーデ画像"
-                  style={{ width: '100%', borderRadius: '14px', objectFit: 'cover', maxHeight: '280px', display: 'block' }} />
+                  style={{ width: '100%', borderRadius: '14px', objectFit: 'contain', maxHeight: '400px', display: 'block', background: '#F8F6F3' }} />
                 <button
                   onClick={() => imageInputRef.current?.click()}
                   style={{
@@ -444,10 +458,10 @@ export default function CoordePage() {
                               {r.name}
                             </p>
                             <p style={{ fontSize: '13px', color: '#C0392B', fontWeight: '700' }}>
-                              ¥{r.price.toLocaleString()}
+                              {'¥'}{r.price.toLocaleString()}
                             </p>
                           </div>
-                          <span style={{ color: '#CCC', fontSize: '18px' }}>›</span>
+                          <span style={{ color: '#CCC', fontSize: '18px' }}>{'›'}</span>
                         </div>
                       </a>
                     ))}
