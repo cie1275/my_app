@@ -40,7 +40,7 @@ export default function Home() {
           color: '#1A2238',
           margin: 0,
         }}>
-          COORDI
+          L'Atelier
         </h1>
         <button style={{
           background: 'none',
