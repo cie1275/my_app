@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const key = `images/${Date.now()}_${file.name}`;
-
+    const userId = request.headers.get('x-user-id') ?? 'anonymous'
+    const key = `images/${userId}/${Date.now()}_${file.name}`
     await s3Client.send(
       new PutObjectCommand({
         Bucket: BUCKET_NAME,

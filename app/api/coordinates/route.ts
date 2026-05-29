@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const key = `coordinates/${Date.now()}.json`;
+    const userId = request.headers.get('x-user-id') ?? 'anonymous'
+    const key = `coordinates/${userId}/${Date.now()}.json`
 
     await s3Client.send(
       new PutObjectCommand({

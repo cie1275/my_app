@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { getUserId } from '../lib/cognito'
 
 type AnalysisResult = {
   category?: string
@@ -63,7 +64,12 @@ export default function ImageUpload({
       try {
         const formData = new FormData()
         formData.append('file', file)
-        const uploadRes = await fetch('/api/images', { method: 'POST', body: formData })
+        const userId = await getUserId()
+        const uploadRes = await fetch('/api/images', {
+          method: 'POST',
+          body: formData,
+          headers: userId ? { 'x-user-id': userId } : {},
+        })
         const uploadJson = await uploadRes.json()
 
         const analyzeRes = await fetch('/api/analyze-clothes', {

@@ -2,6 +2,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getUserId } from '../lib/cognito'
+
 
 type Location = {
   prefecture: string
@@ -44,11 +46,15 @@ export default function CoordCard({ onPrefectureFound }: Props) {
           setLocation({ prefecture, city, latitude, longitude })
           onPrefectureFound(prefecture)
 
-          fetch('/api/coordinates', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ latitude, longitude, timestamp: new Date().toISOString() }),
-          }).catch(err => console.error('座標保存エラー:', err))
+          const userId = await getUserId()
+        fetch('/api/coordinates', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(userId ? { 'x-user-id': userId } : {}),
+          },
+          body: JSON.stringify({ latitude, longitude, timestamp: new Date().toISOString() }),
+        }).catch(err => console.error('座標保存エラー:', err))
         } catch {
           setError('住所の取得に失敗しました')
         } finally {
