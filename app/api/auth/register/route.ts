@@ -1,6 +1,6 @@
 // app/api/auth/register/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import pool from '../../../lib/db'
+import pool from '../../../../lib/db'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,16 +13,23 @@ export async function POST(request: NextRequest) {
     )
 
     if (existing.rows.length > 0) {
-      return NextResponse.json({ success: true, userId: existing.rows[0].id })
-    }
+  return NextResponse.json({
+    success: true,
+    userId: existing.rows[0].id,
+    profileCompleted: existing.rows[0].profile_completed ?? false,
+  })
+}
 
-    // 新規ユーザー登録
-    const result = await pool.query(
-      'INSERT INTO users (email, name) VALUES ($1, $2) RETURNING id',
-      [email, name ?? email]
-    )
+const result = await pool.query(
+  'INSERT INTO users (email, name) VALUES ($1, $2) RETURNING id, profile_completed',
+  [email, name ?? email]
+)
+return NextResponse.json({
+  success: true,
+  userId: result.rows[0].id,
+  profileCompleted: result.rows[0].profile_completed ?? false,
+})
 
-    return NextResponse.json({ success: true, userId: result.rows[0].id })
   } catch (error) {
     console.error('ユーザー登録エラー:', error)
     return NextResponse.json({ error: '登録に失敗しました' }, { status: 500 })

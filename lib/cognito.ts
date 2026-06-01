@@ -1,67 +1,32 @@
 // lib/cognito.ts
-import crypto from 'crypto'
 
-const CLIENT_ID = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!
-const CLIENT_SECRET = process.env.NEXT_PUBLIC_COGNITO_CLIENT_SECRET!
-const REGION = process.env.NEXT_PUBLIC_COGNITO_REGION!
-
-const getSecretHash = (username: string) => {
-  return crypto
-    .createHmac('sha256', CLIENT_SECRET)
-    .update(username + CLIENT_ID)
-    .digest('base64')
-}
-
-const cognitoRequest = async (action: string, body: object) => {
-  const res = await fetch(`https://cognito-idp.${REGION}.amazonaws.com/`, {
+const cognitoApi = async (action: string, params: object) => {
+  const res = await fetch('/api/auth/cognito', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-amz-json-1.1',
-      'X-Amz-Target': `AWSCognitoIdentityProviderService.${action}`,
-    },
-    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...params }),
   })
   const data = await res.json()
-  if (!res.ok) throw new Error(data.message ?? action + 'に失敗しました')
+  if (!res.ok) throw new Error(data.error ?? 'エラーが発生しました')
   return data
 }
 
 // サインアップ
 export const signUp = async (email: string, password: string) => {
-  const username = email.split('@')[0] + '_' + Math.random().toString(36).slice(2, 8)
-  await cognitoRequest('SignUp', {
-    ClientId: CLIENT_ID,
-    SecretHash: getSecretHash(username),
-    Username: username,
-    Password: password,
-    UserAttributes: [{ Name: 'email', Value: email }],
-  })
-  localStorage.setItem('cognito_username', username)
+  const data = await cognitoApi('signUp', { email, password })
+  localStorage.setItem('cognito_username', data.username)
 }
 
 // メール確認
 export const confirmSignUp = async (email: string, code: string) => {
   const username = localStorage.getItem('cognito_username') ?? email
-  await cognitoRequest('ConfirmSignUp', {
-    ClientId: CLIENT_ID,
-    SecretHash: getSecretHash(username),
-    Username: username,
-    ConfirmationCode: code,
-  })
+  await cognitoApi('confirmSignUp', { username, code })
 }
 
 // ログイン
 export const signIn = async (email: string, password: string): Promise<void> => {
-  const data = await cognitoRequest('InitiateAuth', {
-    AuthFlow: 'USER_PASSWORD_AUTH',
-    ClientId: CLIENT_ID,
-    AuthParameters: {
-      USERNAME: email,
-      PASSWORD: password,
-      SECRET_HASH: getSecretHash(email),
-    },
-  })
-  const idToken = data.AuthenticationResult?.IdToken
+  const data = await cognitoApi('signIn', { email, password })
+  const idToken = data.idToken
   if (idToken) {
     document.cookie = `CognitoIdentityServiceProvider.idToken=${idToken}; path=/`
     localStorage.setItem('cognito_id_token', idToken)
@@ -75,18 +40,6 @@ export const signOut = () => {
   localStorage.removeItem('cognito_username')
 }
 
-// 現在のユーザー取得
-export const getCurrentUser = () => {
-  if (typeof window === 'undefined') return null
-  return localStorage.getItem('cognito_id_token')
-}
-
-// セッション確認
-export const getSession = (): boolean => {
-  if (typeof window === 'undefined') return false
-  return !!localStorage.getItem('cognito_id_token')
-}
-
 // ユーザーID取得（JWTのsubクレーム）
 export const getUserId = (): string | null => {
   const token = localStorage.getItem('cognito_id_token')
@@ -97,4 +50,10 @@ export const getUserId = (): string | null => {
   } catch {
     return null
   }
+}
+
+// セッション確認
+export const getSession = (): boolean => {
+  if (typeof window === 'undefined') return false
+  return !!localStorage.getItem('cognito_id_token')
 }
