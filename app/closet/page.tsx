@@ -7,12 +7,12 @@ import ImageUpload from '../../components/ImageUpload'
 
 type ClothItem = {
   id: string
-  image: string
+  image_url: string
   category: string
   color: string
   season: string
   style: string[]
-  registeredAt: string
+  created_at: string
   isFavorite?: boolean
 }
 
@@ -21,69 +21,86 @@ export default function ClosetPage() {
   const [showUpload, setShowUpload] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [selectedItem, setSelectedItem] = useState<ClothItem | null>(null)
-  const [favItems, setFavItems] = useState<ClothItem[]>(() => {
-    if (typeof window === 'undefined') return []
-    const saved = localStorage.getItem('favorites_item')
-    return saved ? JSON.parse(saved) : []
-  })
+  const [favItems, setFavItems] = useState<ClothItem[]>([])
+
+  const userId = typeof window !== 'undefined' ? localStorage.getItem('db_user_id') : null
 
   useEffect(() => {
-    const saved = localStorage.getItem('closet_clothes')
-    if (saved) setClothes(JSON.parse(saved))
-    const favs = localStorage.getItem('favorites_item')
-    if (favs) setFavItems(JSON.parse(favs))
+    if (!userId) return
+    fetchClothes()
+    fetchFavorites()
   }, [])
 
-  const handleUploadComplete = (url: string, key: string, analysis: any, base64?: string) => {
-    if (!analysis) return
-
-    const newItem: ClothItem = {
-      id: Date.now().toString(),
-      image: base64 ?? url,
-      category: analysis.category ?? '不明',
-      color: analysis.color ?? '不明',
-      season: analysis.season ?? '不明',
-      style: analysis.style ?? [],
-      registeredAt: new Date().toISOString(),
-    }
-    const updated = [newItem, ...clothes]
-    setClothes(updated)
-    localStorage.setItem('closet_clothes', JSON.stringify(updated))
-    setShowUpload(false)
+  const fetchClothes = async () => {
+    const res = await fetch(`/api/clothes?userId=${userId}`)
+    const json = await res.json()
+    if (json.success) setClothes(json.clothes)
   }
 
-  const toggleFavorite = (item: ClothItem) => {
-    const isFav = favItems.some((f) => f.id === item.id)
-    let updatedFavs: ClothItem[]
-    if (isFav) {
-      updatedFavs = favItems.filter((f) => f.id !== item.id)
-    } else {
-      updatedFavs = [item, ...favItems]
+  const fetchFavorites = async () => {
+    const res = await fetch(`/api/favorites?userId=${userId}&itemType=item`)
+    const json = await res.json()
+    if (json.success) setFavItems(json.favorites.map((f: any) => f.data))
+  }
+
+  const handleUploadComplete = async (url: string, key: string, analysis: any, base64?: string) => {
+    if (!analysis || !userId) return
+
+    const res = await fetch('/api/clothes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        category: analysis.category ?? '不明',
+        color: analysis.color ?? '不明',
+        season: analysis.season ?? '不明',
+        style: analysis.style ?? [],
+        imageUrl: base64 ?? url,
+      }),
+    })
+    const json = await res.json()
+    if (json.success) {
+      setClothes(prev => [json.cloth, ...prev])
+      setShowUpload(false)
     }
-    setFavItems(updatedFavs)
-    localStorage.setItem('favorites_item', JSON.stringify(updatedFavs))
+  }
 
-    const updatedClothes = clothes.map((c) =>
-      c.id === item.id ? { ...c, isFavorite: !isFav } : c
-    )
-    setClothes(updatedClothes)
-    localStorage.setItem('closet_clothes', JSON.stringify(updatedClothes))
-
+  const toggleFavorite = async (item: ClothItem) => {
+    const isFav = favItems.some((f) => f.id === item.id)
+    if (isFav) {
+      const fav = favItems.find((f) => f.id === item.id)
+      if (!fav) return
+      await fetch(`/api/favorites?id=${(fav as any).fav_id}&userId=${userId}`, { method: 'DELETE' })
+      setFavItems(prev => prev.filter((f) => f.id !== item.id))
+    } else {
+      const res = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          itemType: 'item',
+          itemId: item.id,
+          data: item,
+        }),
+      })
+      const json = await res.json()
+      if (json.success) setFavItems(prev => [...prev, { ...item, fav_id: json.favorite.id } as any])
+    }
     if (selectedItem?.id === item.id) {
       setSelectedItem({ ...selectedItem, isFavorite: !isFav })
     }
   }
 
-  const handleDelete = (id: string) => {
-    const updated = clothes.filter((c) => c.id !== id)
-    setClothes(updated)
-    localStorage.setItem('closet_clothes', JSON.stringify(updated))
-
-    // お気に入りからも削除
-    const updatedFavs = favItems.filter((f) => f.id !== id)
-    setFavItems(updatedFavs)
-    localStorage.setItem('favorites_item', JSON.stringify(updatedFavs))
-
+  const handleDelete = async (id: string) => {
+    await fetch(`/api/clothes?id=${id}&userId=${userId}`, { method: 'DELETE' })
+    setClothes(prev => prev.filter((c) => c.id !== id))
+    const favRes = await fetch(`/api/favorites?userId=${userId}&itemType=item`)
+    const favJson = await favRes.json()
+    if (favJson.success) {
+      const fav = favJson.favorites.find((f: any) => f.item_id === Number(id))
+      if (fav) await fetch(`/api/favorites?id=${fav.id}&userId=${userId}`, { method: 'DELETE' })
+      setFavItems(prev => prev.filter((f) => f.id !== id))
+    }
     setDeleteTargetId(null)
     if (selectedItem?.id === id) setSelectedItem(null)
   }
@@ -97,8 +114,6 @@ export default function ClosetPage() {
 
   return (
     <main style={{ background: '#FAFAFA', minHeight: '100vh', paddingBottom: '80px' }}>
-
-      {/* ヘッダー */}
       <header style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '16px 20px 12px', background: '#fff', borderBottom: '1px solid #F0F0F0',
@@ -118,7 +133,6 @@ export default function ClosetPage() {
         </button>
       </header>
 
-      {/* アップロードエリア */}
       {showUpload && (
         <div style={{ padding: '0 0 8px' }}>
           <ImageUpload
@@ -129,7 +143,6 @@ export default function ClosetPage() {
         </div>
       )}
 
-      {/* 服一覧 */}
       <div style={{ padding: '16px' }}>
         {clothes.length === 0 ? (
           <div style={{ textAlign: 'center', marginTop: '60px', color: '#CCC' }}>
@@ -155,16 +168,14 @@ export default function ClosetPage() {
                       borderRadius: '10px', overflow: 'hidden',
                       background: '#F8F6F3', cursor: 'pointer',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                      aspectRatio: '3/4',
-                      position: 'relative',
+                      aspectRatio: '3/4', position: 'relative',
                     }}
                   >
                     <img
-                      src={item.image}
+                      src={item.image_url}
                       alt={item.category}
                       style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     />
-                    {/* お気に入りボタン */}
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleFavorite(item) }}
                       style={{
@@ -192,7 +203,6 @@ export default function ClosetPage() {
         )}
       </div>
 
-      {/* 詳細モーダル */}
       {selectedItem && (
         <div
           onClick={() => setSelectedItem(null)}
@@ -216,7 +226,7 @@ export default function ClosetPage() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <p style={{ fontSize: '12px', color: '#AAA' }}>
-                {new Date(selectedItem.registeredAt).toLocaleDateString('ja-JP')}
+                {new Date(selectedItem.created_at).toLocaleDateString('ja-JP')}
               </p>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <button
@@ -246,7 +256,7 @@ export default function ClosetPage() {
             </div>
 
             <img
-              src={selectedItem.image}
+              src={selectedItem.image_url}
               alt={selectedItem.category}
               style={{
                 width: '100%', borderRadius: '14px', objectFit: 'contain',
@@ -273,11 +283,10 @@ export default function ClosetPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0' }}>
                 <span style={{ fontSize: '12px', color: '#AAA' }}>系統</span>
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  {selectedItem.style.map((s, i) => (
+                  {selectedItem.style?.map((s, i) => (
                     <span key={i} style={{
                       background: '#1A2238', color: '#fff',
-                      borderRadius: '20px', padding: '3px 10px',
-                      fontSize: '11px',
+                      borderRadius: '20px', padding: '3px 10px', fontSize: '11px',
                     }}>
                       {s}
                     </span>
@@ -289,7 +298,6 @@ export default function ClosetPage() {
         </div>
       )}
 
-      {/* 削除確認ダイアログ */}
       {deleteTargetId && (
         <div
           onClick={() => setDeleteTargetId(null)}

@@ -26,6 +26,12 @@ export default function LoginPage() {
       const json = await res.json()
       if (json.userId) {
         localStorage.setItem('db_user_id', String(json.userId))
+        // 初回ログイン時はプロフィール設定へ
+        if (!json.profileCompleted) {
+        router.push('/profile/setup')
+        } else {
+        router.push('/')
+        }
       }
 
       router.push('/')
