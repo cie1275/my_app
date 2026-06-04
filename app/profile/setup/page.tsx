@@ -1,10 +1,26 @@
 // app/profile/setup/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-const STYLES = [
+const STYLES_MALE = [
+  { label: 'アメカジ', group: 'カジュアル系' },
+  { label: 'ストリート', group: 'カジュアル系' },
+  { label: 'スポーツカジュアル', group: 'カジュアル系' },
+  { label: 'ノームコア', group: 'カジュアル系' },
+  { label: 'ワークウェア', group: 'カジュアル系' },
+  { label: 'トラッド', group: 'きれいめ系' },
+  { label: 'コンサバ', group: 'きれいめ系' },
+  { label: 'ビジネスカジュアル', group: 'きれいめ系' },
+  { label: 'モード', group: 'その他' },
+  { label: 'アウトドア', group: 'その他' },
+  { label: 'ミリタリー', group: 'その他' },
+  { label: 'ロック', group: 'その他' },
+  { label: '韓国系', group: 'その他' },
+]
+
+const STYLES_FEMALE = [
   { label: 'コンサバ', group: 'きれいめ系' },
   { label: 'トラッド', group: 'きれいめ系' },
   { label: 'フェミニン', group: 'きれいめ系' },
@@ -13,7 +29,6 @@ const STYLES = [
   { label: 'ストリートカジュアル', group: 'カジュアル系' },
   { label: 'スポーツカジュアル', group: 'カジュアル系' },
   { label: 'アメカジ', group: 'カジュアル系' },
-  { label: 'モードカジュアル', group: 'カジュアル系' },
   { label: 'ノームコア', group: 'カジュアル系' },
   { label: 'アウトドア', group: 'その他' },
   { label: 'ナチュラル', group: 'その他' },
@@ -22,11 +37,34 @@ const STYLES = [
   { label: '韓国系', group: 'その他' },
 ]
 
-const HAIR_STYLES = [
-  'ショート', 'ボブ', 'ミディアム', 'ロング', 'パーマ', 'ストレート', 'ウェーブ', 'アップスタイル'
+const STYLES_OTHER = [
+  { label: 'カジュアル', group: 'カジュアル系' },
+  { label: 'ストリート', group: 'カジュアル系' },
+  { label: 'スポーツカジュアル', group: 'カジュアル系' },
+  { label: 'ノームコア', group: 'カジュアル系' },
+  { label: 'トラッド', group: 'きれいめ系' },
+  { label: 'コンサバ', group: 'きれいめ系' },
+  { label: 'フェミニン', group: 'きれいめ系' },
+  { label: 'モード', group: 'その他' },
+  { label: 'アウトドア', group: 'その他' },
+  { label: 'ナチュラル', group: 'その他' },
+  { label: '韓国系', group: 'その他' },
 ]
 
-const groups = [...new Set(STYLES.map((s) => s.group))]
+const HAIR_STYLES_MALE = [
+  'ショート', 'ツーブロック', 'マッシュ', 'オールバック',
+  'センターパート', 'パーマ', 'スキンフェード', 'その他'
+]
+
+const HAIR_STYLES_FEMALE = [
+  'ショート', 'ボブ', 'ミディアム', 'ロング',
+  'パーマ', 'ストレート', 'ウェーブ', 'アップスタイル', 'その他'
+]
+
+const HAIR_STYLES_OTHER = [
+  'ショート', 'ボブ', 'ミディアム', 'ロング',
+  'パーマ', 'ストレート', 'ツーブロック', 'マッシュ', 'その他'
+]
 
 export default function ProfileSetupPage() {
   const router = useRouter()
@@ -35,9 +73,50 @@ export default function ProfileSetupPage() {
   const [height, setHeight] = useState('')
   const [weight, setWeight] = useState('')
   const [hairStyle, setHairStyle] = useState('')
+  const [hairStyleCustom, setHairStyleCustom] = useState('')
   const [selectedStyles, setSelectedStyles] = useState<string[]>([])
+  const [customStyle, setCustomStyle] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  useEffect(() => {
+  const fetchProfile = async () => {
+    const userId = localStorage.getItem('db_user_id')
+    if (!userId) return
+    const res = await fetch(`/api/profile?userId=${userId}`)
+    const json = await res.json()
+    if (json.success && json.profile) {
+      const p = json.profile
+      if (p.gender) setGender(p.gender)
+      if (p.height) setHeight(String(p.height))
+      if (p.weight) setWeight(String(p.weight))
+      if (p.hair_style) {
+        const knownHairStyles = [...HAIR_STYLES_MALE, ...HAIR_STYLES_FEMALE, ...HAIR_STYLES_OTHER]
+        if (knownHairStyles.includes(p.hair_style)) {
+          setHairStyle(p.hair_style)
+        } else {
+          setHairStyle('その他')
+          setHairStyleCustom(p.hair_style)
+        }
+      }
+      if (p.preferred_styles?.length) setSelectedStyles(p.preferred_styles)
+    }
+  }
+  fetchProfile()
+}, [])
+
+  const getHairStyles = () => {
+    if (gender === 'メンズ') return HAIR_STYLES_MALE
+    if (gender === 'レディース') return HAIR_STYLES_FEMALE
+    return HAIR_STYLES_OTHER
+  }
+
+  const getStyles = () => {
+    if (gender === 'メンズ') return STYLES_MALE
+    if (gender === 'レディース') return STYLES_FEMALE
+    return STYLES_OTHER
+  }
+
+  const groups = [...new Set(getStyles().map((s) => s.group))]
 
   const toggleStyle = (style: string) => {
     setSelectedStyles(prev =>
@@ -45,11 +124,22 @@ export default function ProfileSetupPage() {
     )
   }
 
+  const handleAddCustomStyle = () => {
+    if (!customStyle.trim()) return
+    if (!selectedStyles.includes(customStyle.trim())) {
+      setSelectedStyles(prev => [...prev, customStyle.trim()])
+    }
+    setCustomStyle('')
+  }
+
   const handleSubmit = async () => {
-    if (selectedStyles.length === 0) {
+    const finalStyles = selectedStyles
+    if (finalStyles.length === 0) {
       setError('好みの系統を1つ以上選択してください')
       return
     }
+    const finalHairStyle = hairStyle === 'その他' ? hairStyleCustom : hairStyle
+
     setLoading(true)
     setError('')
     try {
@@ -62,8 +152,8 @@ export default function ProfileSetupPage() {
           gender,
           height: height ? Number(height) : null,
           weight: weight ? Number(weight) : null,
-          hairStyle,
-          preferredStyles: selectedStyles,
+          hairStyle: finalHairStyle,
+          preferredStyles: finalStyles,
         }),
       })
       const json = await res.json()
@@ -100,7 +190,6 @@ export default function ProfileSetupPage() {
     }}>
       <div style={{ width: '100%', maxWidth: '400px' }}>
 
-        {/* ヘッダー */}
         <h1 style={{
           fontSize: '24px', fontWeight: '700', letterSpacing: '0.08em',
           color: '#1A2238', textAlign: 'center', marginBottom: '4px',
@@ -112,7 +201,6 @@ export default function ProfileSetupPage() {
           プロフィール設定
         </p>
 
-        {/* ステップインジケーター */}
         <div style={{ display: 'flex', gap: '6px', marginBottom: '28px', justifyContent: 'center' }}>
           {[1, 2].map((s) => (
             <div key={s} style={{
@@ -132,14 +220,17 @@ export default function ProfileSetupPage() {
 
             {/* 性別 */}
             <div>
-              <label style={{ fontSize: '12px', color: '#AAA', display: 'block', marginBottom: '8px' }}>
-                性別
-              </label>
+              <label style={{ fontSize: '12px', color: '#AAA', display: 'block', marginBottom: '8px' }}>性別</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {['メンズ', 'レディース', 'その他'].map((g) => (
                   <button
                     key={g}
-                    onClick={() => setGender(g)}
+                    onClick={() => {
+                      setGender(g)
+                      setHairStyle('')
+                      setHairStyleCustom('')
+                      setSelectedStyles([])
+                    }}
                     style={{
                       flex: 1, padding: '10px', borderRadius: '10px',
                       border: gender === g ? 'none' : '1.5px solid #EEE',
@@ -156,55 +247,53 @@ export default function ProfileSetupPage() {
 
             {/* 身長 */}
             <div>
-              <label style={{ fontSize: '12px', color: '#AAA', display: 'block', marginBottom: '8px' }}>
-                身長（cm）
-              </label>
-              <input
-                type="number"
-                value={height}
-                onChange={(e) => setHeight(e.target.value)}
-                placeholder="例：165"
-                style={inputStyle}
-              />
+              <label style={{ fontSize: '12px', color: '#AAA', display: 'block', marginBottom: '8px' }}>身長（cm）</label>
+              <input type="number" value={height} onChange={(e) => setHeight(e.target.value)} placeholder="例：165" style={inputStyle} />
             </div>
 
             {/* 体重 */}
             <div>
-              <label style={{ fontSize: '12px', color: '#AAA', display: 'block', marginBottom: '8px' }}>
-                体重（kg）
-              </label>
-              <input
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                placeholder="例：55"
-                style={inputStyle}
-              />
+              <label style={{ fontSize: '12px', color: '#AAA', display: 'block', marginBottom: '8px' }}>体重（kg）</label>
+              <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="例：55" style={inputStyle} />
             </div>
 
             {/* 髪型 */}
-            <div>
-              <label style={{ fontSize: '12px', color: '#AAA', display: 'block', marginBottom: '8px' }}>
-                髪型
-              </label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {HAIR_STYLES.map((h) => (
-                  <button
-                    key={h}
-                    onClick={() => setHairStyle(h)}
-                    style={{
-                      padding: '8px 14px', borderRadius: '20px',
-                      border: hairStyle === h ? 'none' : '1.5px solid #EEE',
-                      background: hairStyle === h ? '#1A2238' : '#fff',
-                      color: hairStyle === h ? '#fff' : '#555',
-                      fontSize: '13px', cursor: 'pointer',
-                    }}
-                  >
-                    {h}
-                  </button>
-                ))}
+            {gender && (
+              <div>
+                <label style={{ fontSize: '12px', color: '#AAA', display: 'block', marginBottom: '8px' }}>髪型</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {getHairStyles().map((h) => (
+                    <button
+                      key={h}
+                      onClick={() => {
+                        setHairStyle(h)
+                        if (h !== 'その他') setHairStyleCustom('')
+                      }}
+                      style={{
+                        padding: '8px 14px', borderRadius: '20px',
+                        border: hairStyle === h ? 'none' : '1.5px solid #EEE',
+                        background: hairStyle === h ? '#1A2238' : '#fff',
+                        color: hairStyle === h ? '#fff' : '#555',
+                        fontSize: '13px', cursor: 'pointer',
+                      }}
+                    >
+                      {h}
+                    </button>
+                  ))}
+                </div>
+
+                {/* その他の髪型入力 */}
+                {hairStyle === 'その他' && (
+                  <input
+                    type="text"
+                    value={hairStyleCustom}
+                    onChange={(e) => setHairStyleCustom(e.target.value)}
+                    placeholder="髪型を入力してください"
+                    style={{ ...inputStyle, marginTop: '10px' }}
+                  />
+                )}
               </div>
-            </div>
+            )}
 
             <button
               onClick={() => setStep(2)}
@@ -228,7 +317,7 @@ export default function ProfileSetupPage() {
               好みのスタイルを選んでください
             </p>
             <p style={{ fontSize: '12px', color: '#AAA', marginBottom: '16px' }}>
-              複数選択可
+              複数選択可・その他は自由入力
             </p>
 
             {groups.map((group) => (
@@ -237,7 +326,7 @@ export default function ProfileSetupPage() {
                   {group.toUpperCase()}
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {STYLES.filter((s) => s.group === group).map((s) => (
+                  {getStyles().filter((s) => s.group === group).map((s) => (
                     <button
                       key={s.label}
                       onClick={() => toggleStyle(s.label)}
@@ -255,6 +344,55 @@ export default function ProfileSetupPage() {
                 </div>
               </div>
             ))}
+
+            {/* 自由入力 */}
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{ fontSize: '11px', color: '#AAA', letterSpacing: '0.06em', marginBottom: '8px', fontWeight: '600' }}>
+                その他（自由入力）
+              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  value={customStyle}
+                  onChange={(e) => setCustomStyle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddCustomStyle()}
+                  placeholder="例：Y2K・サーフ系"
+                  style={{ ...inputStyle, flex: 1 }}
+                />
+                <button
+                  onClick={handleAddCustomStyle}
+                  style={{
+                    padding: '12px 16px', borderRadius: '12px',
+                    border: 'none', background: '#1A2238',
+                    color: '#fff', fontSize: '13px', cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  追加
+                </button>
+              </div>
+
+              {/* 追加済みカスタムスタイル */}
+              {selectedStyles.filter(s => !getStyles().map(gs => gs.label).includes(s)).length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                  {selectedStyles
+                    .filter(s => !getStyles().map(gs => gs.label).includes(s))
+                    .map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => toggleStyle(s)}
+                        style={{
+                          padding: '8px 14px', borderRadius: '20px',
+                          border: 'none', background: '#1A2238',
+                          color: '#fff', fontSize: '13px', cursor: 'pointer',
+                        }}
+                      >
+                        {s} ✕
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
 
             {error && (
               <p style={{ fontSize: '13px', color: '#C0392B', marginBottom: '12px', textAlign: 'center' }}>
