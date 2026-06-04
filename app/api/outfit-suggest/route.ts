@@ -2,12 +2,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import bedrockClient from "../../../lib/bedrock";
+import pool from '../../../lib/db';
 
 const YAHOO_CLIENT_ID = process.env.YAHOO_CLIENT_ID!;
 
 export async function POST(request: NextRequest) {
   try {
-    const { weather, temperature, clothes, totalBudget, itemBudget } = await request.json();
+    const { weather, temperature, clothes, totalBudget, itemBudget, userId } = await request.json()
+
+// プロフィール取得
+      let profile: any = null
+      if (userId) {
+        const result = await pool.query(
+        'SELECT gender, height, weight, hair_style, preferred_styles FROM users WHERE id = $1',
+        [userId]
+      )
+      if (result.rows.length > 0) profile = result.rows[0]
+    }
 
     // アイテムごとの予算を自動計算
     const autoItemBudget = itemBudget
@@ -17,7 +28,14 @@ export async function POST(request: NextRequest) {
       : null
 
     const prompt = `あなたはファッションの専門家です。
-      以下の天気と気温に合わせた服装とアクセサリーを提案してください。
+      以下のユーザー情報・天気・気温に合わせた服装とアクセサリーを提案してください。
+
+      【ユーザー情報】
+      ${profile?.gender ? `性別：${profile.gender}` : ''}
+      ${profile?.height ? `身長：${profile.height}cm` : ''}
+      ${profile?.weight ? `体重：${profile.weight}kg` : ''}
+      ${profile?.hair_style ? `髪型：${profile.hair_style}` : ''}
+      ${profile?.preferred_styles?.length ? `好みの系統：${profile.preferred_styles.join('・')}` : ''}
       
       天気：${weather}
       気温：${temperature}℃
@@ -28,11 +46,13 @@ export async function POST(request: NextRequest) {
       ${JSON.stringify(clothes, null, 2)}
       
       以下のルールに従ってください：
-      - 持っている服を優先的に使ったコーディネートを提案する
-      - 足りないアイテムは購入候補として提案する
-      - アクセサリー（ネックレス・ブレスレット・リング・ピアス・時計・ベルト・帽子・スカーフ等）も必ず提案する
-      - ファッション系統を考慮する
-      - コーディネート全体のバランスを考慮する
+      - クローゼットの服を分析し、天気・気温・ユーザーの好みの系統に合うものを優先的に使う
+      - クローゼットの服だけでコーディネートが完成する場合は購入候補を最小限にする
+      - クローゼットの服では不足しているアイテム、またはコーディネートをより良くできるアイテムのみ購入候補として提案する
+      - 購入候補はクローゼットにない種類のアイテムを優先する（すでに持っている種類は提案しない）
+      - アクセサリー（ネックレス・ブレスレット・リング・ピアス・時計・ベルト・帽子・スカーフ等）はクローゼットにない場合のみ提案する
+      - ユーザーの好みの系統・性別・身長・体重・髪型を考慮してコーディネートを提案する
+      - コーディネート全体のバランスとユーザーのスタイルを考慮する
       ${totalBudget ? `- 購入候補の合計金額が必ず${totalBudget}円以内になるように提案する` : ''}
       ${autoItemBudget ? `- 各アイテムのestimated_priceは必ず${autoItemBudget}円以下にする` : ''}
       - 必ずJSON形式のみで回答する

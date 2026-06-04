@@ -78,6 +78,7 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
   const [totalBudget, setTotalBudget] = useState('')
   const [itemBudget, setItemBudget] = useState('')
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+  const [useCloset, setUseCloset] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
@@ -124,6 +125,7 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
 
     const parts: string[] = []
     if (uploadedImage) parts.push('📷 画像あり')
+    parts.push(useCloset ? '👚 クローゼットを使用' : '🛍️ クローゼットを使用しない')
     if (totalBudget) parts.push(`全体予算：¥${Number(totalBudget).toLocaleString()}`)
     if (itemBudget) parts.push(`アイテム予算：¥${Number(itemBudget).toLocaleString()}`)
     parts.push('👗 コーデを提案して')
@@ -139,16 +141,17 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
 
     try {
       const res = await fetch('/api/outfit-suggest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          weather,
-          temperature,
-          clothes,
-          totalBudget: totalBudget ? Number(totalBudget) : null,
-          itemBudget: itemBudget ? Number(itemBudget) : null,
-        }),
-      })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        weather,
+        temperature,
+        clothes: useCloset ? clothes : [],
+        totalBudget: totalBudget ? Number(totalBudget) : null,
+        itemBudget: itemBudget ? Number(itemBudget) : null,
+        userId: localStorage.getItem('db_user_id'),
+      }),
+    })
       const json = await res.json()
       if (json.success) {
         const msgId = (Date.now() + 1).toString()
@@ -529,6 +532,33 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
             </button>
           </div>
         )}
+
+        {/* クローゼット使用トグル */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: '10px', padding: '8px 12px',
+          background: '#F8F6F3', borderRadius: '10px',
+        }}>
+          <span style={{ fontSize: '13px', color: '#555' }}>
+            👚 クローゼットの服を使う
+          </span>
+          <button
+            onClick={() => setUseCloset(!useCloset)}
+            style={{
+              width: '44px', height: '24px', borderRadius: '12px',
+              border: 'none', cursor: 'pointer',
+              background: useCloset ? '#1A2238' : '#DDD',
+              position: 'relative', transition: 'background 0.2s',
+            }}
+          >
+            <div style={{
+              width: '18px', height: '18px', borderRadius: '50%',
+              background: '#fff', position: 'absolute',
+              top: '3px', transition: 'left 0.2s',
+              left: useCloset ? '23px' : '3px',
+            }} />
+          </button>
+        </div>
 
         {/* 予算入力 */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
