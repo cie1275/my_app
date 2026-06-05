@@ -49,6 +49,7 @@ type Message = {
   generatedImage?: string
   imageCredit?: ImageCredit
   generatingImage?: boolean
+  imageTimeout?: boolean
   saved?: boolean
 }
 
@@ -98,14 +99,22 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
       const res = await fetch('/api/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ style: suggestion.style, items }),
+        body: JSON.stringify({
+          style: suggestion.style,
+          items,
+          userId: localStorage.getItem('db_user_id'),
+        }),
       })
       const json = await res.json()
       if (json.success) {
         setMessages(prev => prev.map(m =>
           m.id === msgId
-            ? { ...m, generatedImage: json.image, imageCredit: json.credit, generatingImage: false }
+            ? { ...m, generatedImage: json.image, generatingImage: false }
             : m
+        ))
+      } else if (json.error === 'timeout') {
+        setMessages(prev => prev.map(m =>
+          m.id === msgId ? { ...m, generatingImage: false, imageTimeout: true } : m
         ))
       } else {
         setMessages(prev => prev.map(m =>
@@ -293,54 +302,46 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
 
                 {/* 画像エリア */}
                 {msg.generatingImage ? (
-                  <div style={{
-                    width: '100%', height: '200px', borderRadius: '12px',
-                    background: '#F0EDE8', marginBottom: '14px',
-                    display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center', gap: '10px',
-                  }}>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <div style={dotStyleBrown('0s')} />
-                      <div style={dotStyleBrown('0.2s')} />
-                      <div style={dotStyleBrown('0.4s')} />
-                    </div>
-                    <p style={{ fontSize: '12px', color: '#7A6552' }}>イメージ画像を取得中...</p>
+                <div style={{
+                  width: '100%', height: '200px', borderRadius: '12px',
+                  background: '#F0EDE8', marginBottom: '14px',
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: '10px',
+                }}>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <div style={dotStyleBrown('0s')} />
+                    <div style={dotStyleBrown('0.2s')} />
+                    <div style={dotStyleBrown('0.4s')} />
                   </div>
-                ) : msg.generatedImage ? (
-                  <div style={{ marginBottom: '14px' }}>
-                    <img
-                        src={msg.generatedImage}
-                        alt="コーデイメージ"
-                        style={{
-                          width: '100%', borderRadius: '12px',
-                          objectFit: 'contain', maxHeight: '400px', display: 'block',
-                          background: '#F8F6F3',
-                        }}
-                      />
-                    {msg.imageCredit?.name && (
-                      <p style={{ fontSize: '10px', color: '#CCC', textAlign: 'right', marginTop: '4px' }}>
-                        {'Photo by '}
-                        
-                        <a  href={`${msg.imageCredit.link}?utm_source=coordi_app&utm_medium=referral`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: '#CCC', textDecoration: 'underline' }}
-                        >
-                          {msg.imageCredit.name}
-                        </a>
-                        {' on '}
-                        
-                        <a  href="https://unsplash.com/?utm_source=coordi_app&utm_medium=referral"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: '#CCC', textDecoration: 'underline' }}
-                        >
-                          Unsplash
-                        </a>
-                      </p>
-                    )}
-                  </div>
-                ) : null}
+                  <p style={{ fontSize: '12px', color: '#7A6552' }}>イメージ画像を取得中...</p>
+                </div>
+              ) : msg.imageTimeout ? (
+                <div style={{
+                  width: '100%', borderRadius: '12px',
+                  background: '#FFF5F5', marginBottom: '14px',
+                  padding: '16px', textAlign: 'center',
+                  border: '1px solid #FFD0D0',
+                }}>
+                  <p style={{ fontSize: '13px', color: '#C0392B', marginBottom: '4px' }}>
+                    ⏱ 画像の生成がタイムアウトしました
+                  </p>
+                  <p style={{ fontSize: '11px', color: '#AAA' }}>
+                    再度提案ボタンを押してみてください
+                  </p>
+                </div>
+              ) : msg.generatedImage ? (
+                <div style={{ marginBottom: '14px' }}>
+                  <img
+                    src={msg.generatedImage}
+                    alt="コーデイメージ"
+                    style={{
+                      width: '100%', borderRadius: '12px',
+                      objectFit: 'contain', maxHeight: '400px', display: 'block',
+                      background: '#F8F6F3',
+                    }}
+                  />
+                </div>
+              ) : null}
 
                 {/* コメント */}
                 <p style={{ fontSize: '14px', color: '#333', lineHeight: 1.7, marginBottom: '10px' }}>
