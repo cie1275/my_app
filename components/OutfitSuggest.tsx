@@ -106,12 +106,15 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
         }),
       })
       const json = await res.json()
-      if (json.success) {
-        setMessages(prev => prev.map(m =>
-          m.id === msgId
-            ? { ...m, generatedImage: json.image, generatingImage: false }
-            : m
-        ))
+      console.log('generate-image response:', json.success, json.image?.slice(0, 50))
+      if (json.success && json.image) {
+        setMessages(prev => prev.map(m => {
+          if (m.id === msgId) {
+            return { ...m, generatedImage: json.image, generatingImage: false }
+          }
+          return m
+        }))
+          console.log('state updated with image')
       } else if (json.error === 'timeout') {
         setMessages(prev => prev.map(m =>
           m.id === msgId ? { ...m, generatingImage: false, imageTimeout: true } : m
@@ -334,6 +337,8 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
                   <img
                     src={msg.generatedImage}
                     alt="コーデイメージ"
+                    onError={(e) => console.log('画像表示エラー:', e)}
+                    onLoad={() => console.log('画像表示成功')}
                     style={{
                       width: '100%', borderRadius: '12px',
                       objectFit: 'contain', maxHeight: '400px', display: 'block',
