@@ -29,8 +29,7 @@ export async function POST(request: NextRequest) {
     const prompt = `full body fashion photo of a ${gender}, wearing ${itemDesc}, ${styleDesc} style, white background, studio lighting, high quality, fashion magazine`
     const negativePrompt = 'bad quality, blurry, distorted, ugly, deformed, watermark, text'
 
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=768&negative=${encodeURIComponent(negativePrompt)}&nologo=true&seed=${Math.floor(Math.random() * 100000)}`
-
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=768&nologo=true&seed=${Math.floor(Math.random() * 100000)}&model=turbo`
     // 30秒でタイムアウト
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 30000)
@@ -39,13 +38,16 @@ export async function POST(request: NextRequest) {
       const imageRes = await fetch(imageUrl, { signal: controller.signal })
       clearTimeout(timeout)
 
+      console.log('Pollinations status:', imageRes.status)
+      console.log('Pollinations content-type:', imageRes.headers.get('content-type'))
+
       const imageBuffer = await imageRes.arrayBuffer()
+      console.log('Buffer size:', imageBuffer.byteLength)
       const base64 = Buffer.from(imageBuffer).toString('base64')
-      const contentType = imageRes.headers.get('content-type') ?? 'image/jpeg'
 
       return NextResponse.json({
         success: true,
-        image: `data:${contentType};base64,${base64}`,
+        image: `data:image/jpeg;base64,${base64}`,
       })
     } catch (fetchError: any) {
       clearTimeout(timeout)
