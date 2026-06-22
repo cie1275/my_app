@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '../../../lib/db'
 
+const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY!
+
 export async function POST(request: NextRequest) {
   try {
     const { style, items, userId } = await request.json()
@@ -20,48 +22,55 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const styleDesc = style?.slice(0, 2).join(', ') ?? 'casual'
+    const styleDesc = style?.slice(0, 2).join(' ') ?? 'fashion'
     const itemDesc = items
-      ?.slice(0, 3)
+      ?.slice(0, 2)
       .map((i: { category: string; color: string }) => `${i.color} ${i.category}`)
-      .join(', ') ?? ''
+      .join(' ') ?? ''
 
-    const prompt = `full body fashion photo of a ${gender}, wearing ${itemDesc}, ${styleDesc} style, white background, studio lighting, high quality, fashion magazine`
-    const negativePrompt = 'bad quality, blurry, distorted, ugly, deformed, watermark, text'
+    const genderQuery = gender === 'man'
+      ? 'men male fashion outfit'
+      : gender === 'woman'
+      ? 'women female fashion outfit'
+      : 'fashion outfit'
 
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=768&nologo=true&seed=${Math.floor(Math.random() * 100000)}&model=turbo`
-    // 30秒でタイムアウト
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000)
+    const query = `full body ${genderQuery} ${styleDesc} ${itemDesc}`.trim()
 
-    try {
-      const imageRes = await fetch(imageUrl, { signal: controller.signal })
-      clearTimeout(timeout)
-
-      console.log('Pollinations status:', imageRes.status)
-      console.log('Pollinations content-type:', imageRes.headers.get('content-type'))
-
-      const imageBuffer = await imageRes.arrayBuffer()
-      console.log('Buffer size:', imageBuffer.byteLength)
-      const base64 = Buffer.from(imageBuffer).toString('base64')
-
-      return NextResponse.json({
-        success: true,
-        image: `data:image/jpeg;base64,${base64}`,
-      })
-    } catch (fetchError: any) {
-      clearTimeout(timeout)
-      if (fetchError.name === 'AbortError') {
-        return NextResponse.json({
-          success: false,
-          error: 'timeout',
-          message: '画像の生成に時間がかかりすぎました。再度提案ボタンを押してみてください。',
-        }, { status: 408 })
+    const res = await fetch(
+      `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=portrait&content_filter=high`,
+      {
+        headers: {
+          Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+        },
       }
-      throw fetchError
+    )
+
+    if (!res.ok) {
+      return NextResponse.json({ error: '画像の取得に失敗しました' }, { status: 500 })
     }
+
+    const data = await res.json()
+    const imageUrl = data.urls?.regular ?? data.urls?.small
+
+    if (!imageUrl) {
+      return NextResponse.json({ error: '画像が見つかりませんでした' }, { status: 404 })
+    }
+
+    // サーバー側で画像を取得してbase64に変換
+    const imageRes = await fetch(imageUrl)
+    const imageBuffer = await imageRes.arrayBuffer()
+    const base64 = Buffer.from(imageBuffer).toString('base64')
+
+    return NextResponse.json({
+      success: true,
+      image: `data:image/jpeg;base64,${base64}`,
+      credit: {
+        name: data.user?.name ?? '',
+        link: data.links?.html ?? '',
+      },
+    })
   } catch (error) {
-    console.error('Image generation error:', error)
-    return NextResponse.json({ error: '画像生成に失敗しました' }, { status: 500 })
+    console.error('Unsplash error:', error)
+    return NextResponse.json({ error: '画像の取得に失敗しました' }, { status: 500 })
   }
 }
