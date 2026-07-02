@@ -47,6 +47,7 @@ export default function CoordePage() {
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null)
   const [favCoords, setFavCoords] = useState<FavoriteCoord[]>([])
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [postedIds, setPostedIds] = useState<string[]>([])
   const [closetClothes, setClosetClothes] = useState<ClothItem[]>([])
   const imageInputRef = useRef<HTMLInputElement>(null)
 
@@ -164,6 +165,27 @@ export default function CoordePage() {
     reader.readAsDataURL(file)
   }
 
+  const handlePost = async (item: HistoryItem) => {
+  if (postedIds.includes(item.id)) return  // 投稿済みはスキップ
+  setPostedIds(prev => [...prev, item.id]) // 先に追加してボタンを無効化
+
+  const res = await fetch('/api/posts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId,
+      imageUrl: item.image,
+      comment: item.comment,
+      style: item.style,
+      outfitSuggestionId: item.id,
+    }),
+  })
+  const json = await res.json()
+  if (!json.success) {
+    setPostedIds(prev => prev.filter(id => id !== item.id)) // 失敗したら戻す
+  }
+}
+
   const handleDelete = async (id: string) => {
     await fetch(`/api/outfit-history?id=${id}&userId=${userId}`, { method: 'DELETE' })
     setHistory(prev => prev.filter((h) => h.id !== id))
@@ -262,6 +284,13 @@ export default function CoordePage() {
                   <span onClick={(e) => { e.stopPropagation(); toggleFavorite(item) }} style={{ fontSize: '18px', cursor: 'pointer', lineHeight: 1 }}>
                     {isFavorited(item.id) ? '❤️' : '🤍'}
                   </span>
+                  <span
+                    onClick={(e) => { e.stopPropagation(); handlePost(item) }}
+                    style={{ fontSize: '16px', cursor: postedIds.includes(item.id) ? 'default' : 'pointer', lineHeight: 1, opacity: postedIds.includes(item.id) ? 0.4 : 1 }}
+                    title={postedIds.includes(item.id) ? '投稿済み' : 'コミュニティに投稿'}
+                  >
+                    {postedIds.includes(item.id) ? '✅' : '📤'}
+                  </span>
                   <span onClick={(e) => { e.stopPropagation(); setDeleteTargetId(item.id) }} style={{ fontSize: '16px', cursor: 'pointer', lineHeight: 1 }}>
                     🗑️
                   </span>
@@ -295,6 +324,14 @@ export default function CoordePage() {
               <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                 <button onClick={() => { toggleFavorite(selectedItem); setSelectedItem({ ...selectedItem }) }} style={{ border: 'none', background: 'none', fontSize: '22px', cursor: 'pointer', padding: 0 }}>
                   {isFavorited(selectedItem.id) ? '❤️' : '🤍'}
+                </button>
+                <button
+                  onClick={() => { handlePost(selectedItem); setSelectedItem(null) }}
+                  disabled={postedIds.includes(selectedItem.id)}
+                  style={{ border: 'none', background: 'none', fontSize: '20px', cursor: postedIds.includes(selectedItem.id) ? 'default' : 'pointer', padding: 0, opacity: postedIds.includes(selectedItem.id) ? 0.4 : 1 }}
+                  title={postedIds.includes(selectedItem.id) ? '投稿済み' : 'コミュニティに投稿'}
+                >
+                  {postedIds.includes(selectedItem.id) ? '✅' : '📤'}
                 </button>
                 <button onClick={() => { setSelectedItem(null); setDeleteTargetId(selectedItem.id) }} style={{ border: 'none', background: 'none', fontSize: '18px', cursor: 'pointer', padding: 0 }}>🗑️</button>
                 <button onClick={() => setSelectedItem(null)} style={{ border: 'none', background: '#F5F5F5', borderRadius: '50%', width: '28px', height: '28px', fontSize: '14px', cursor: 'pointer', color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
