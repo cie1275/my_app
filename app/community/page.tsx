@@ -54,7 +54,8 @@ export default function CommunityPage() {
     if (json.success) setPosts(json.posts)
   }
 
-  const handleLike = async (post: Post) => {
+  const handleLike = async (post: Post, e: React.MouseEvent) => {
+    e.stopPropagation()
     const res = await fetch(`/api/posts/${post.id}/like`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -130,7 +131,6 @@ export default function CommunityPage() {
     })
     const json = await res.json()
     if (json.success) {
-      setPosts(prev => [{ ...json.post, liked: false, name: '', email: '' }, ...prev])
       setShowNewPost(false)
       setNewPostImage(null)
       setNewPostComment('')
@@ -140,7 +140,8 @@ export default function CommunityPage() {
     setLoading(false)
   }
 
-  const handleDelete = async (postId: number) => {
+  const handleDelete = async (postId: number, e: React.MouseEvent) => {
+    e.stopPropagation()
     await fetch(`/api/posts?id=${postId}&userId=${userId}`, { method: 'DELETE' })
     setPosts(prev => prev.filter(p => p.id !== postId))
     setSelectedPost(null)
@@ -148,207 +149,205 @@ export default function CommunityPage() {
 
   const getUserName = (post: Post) => post.name || post.email?.split('@')[0] || 'ユーザー'
 
-  const tabStyle = (tab: 'all' | 'following') => ({
-    flex: 1,
-    padding: '10px',
-    border: 'none',
-    borderBottom: activeTab === tab ? '2px solid #1A2238' : '2px solid #F0F0F0',
-    background: 'none',
-    color: activeTab === tab ? '#1A2238' : '#AAA',
-    fontSize: '13px',
-    cursor: 'pointer',
-    fontWeight: activeTab === tab ? ('600' as const) : ('400' as const),
-  })
-
   return (
-    <main style={{ background: '#FAFAFA', minHeight: '100vh', paddingBottom: '80px' }}>
+    <main style={{ background: '#F8F8F8', minHeight: '100vh', paddingBottom: '80px' }}>
+
+      {/* ヘッダー */}
       <header style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '16px 20px 12px', background: '#fff', borderBottom: '1px solid #F0F0F0',
+        padding: '12px 16px', background: '#fff', borderBottom: '1px solid #F0F0F0',
+        position: 'sticky', top: 0, zIndex: 50,
       }}>
-        <h1 style={{ fontSize: '20px', fontWeight: '700', letterSpacing: '0.12em', color: '#1A2238', margin: 0, fontStyle: 'italic' }}>
-          L'Atelier
+        <h1 style={{ fontSize: '16px', fontWeight: '700', letterSpacing: '0.12em', color: '#1A2238', margin: 0, fontStyle: 'italic' }}>
+          COLLECTION
         </h1>
         <button
           onClick={() => setShowNewPost(true)}
           style={{
-            background: '#1A2238', color: '#fff', border: 'none',
-            borderRadius: '20px', padding: '8px 16px',
-            fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+            background: 'none', color: '#1A2238', border: '1.5px solid #1A2238',
+            borderRadius: '20px', padding: '5px 12px',
+            fontSize: '11px', fontWeight: '600', cursor: 'pointer',
           }}
         >
           ＋ 投稿
         </button>
       </header>
 
-      <div style={{ display: 'flex', background: '#fff', borderBottom: '1px solid #F0F0F0' }}>
-        <button style={tabStyle('all')} onClick={() => setActiveTab('all')}>おすすめ</button>
-        <button style={tabStyle('following')} onClick={() => setActiveTab('following')}>フォロー中</button>
+      {/* タブ */}
+      <div style={{ display: 'flex', background: '#fff', borderBottom: '1px solid #F0F0F0', marginBottom: '2px' }}>
+        {(['all', 'following'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              flex: 1, padding: '8px', border: 'none',
+              borderBottom: activeTab === tab ? '2px solid #1A2238' : '2px solid transparent',
+              background: 'none',
+              color: activeTab === tab ? '#1A2238' : '#AAA',
+              fontSize: '12px', cursor: 'pointer',
+              fontWeight: activeTab === tab ? '600' : '400',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {tab === 'all' ? 'おすすめ' : 'フォロー中'}
+          </button>
+        ))}
       </div>
 
-      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {posts.length === 0 ? (
-          <div style={{ textAlign: 'center', marginTop: '60px', color: '#CCC' }}>
-            <p style={{ fontSize: '40px', marginBottom: '12px' }}>👗</p>
-            <p style={{ fontSize: '14px' }}>投稿がありません</p>
-          </div>
-        ) : (
-          posts.map((post) => (
+      {/* 投稿グリッド */}
+      {posts.length === 0 ? (
+        <div style={{ textAlign: 'center', marginTop: '80px', color: '#CCC' }}>
+          <p style={{ fontSize: '36px', marginBottom: '12px' }}>👗</p>
+          <p style={{ fontSize: '13px' }}>投稿がありません</p>
+          <p style={{ fontSize: '11px', marginTop: '6px' }}>最初の投稿をしてみましょう</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2px', padding: '2px' }}>
+          {posts.map((post) => (
             <div
               key={post.id}
-              style={{
-                background: '#fff', borderRadius: '14px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden',
-              }}
+              onClick={() => handleOpenPost(post)}
+              style={{ position: 'relative', cursor: 'pointer', background: '#F0EDE8', paddingBottom: '133%', overflow: 'hidden' }}
             >
-              {/* ユーザー情報 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px 8px' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+                {post.image_url ? (
+                  <img src={post.image_url} alt="コーデ" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>👗</div>
+                )}
+
                 <div style={{
-                  width: '36px', height: '36px', borderRadius: '50%',
-                  background: '#F0EDE8', display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', fontSize: '16px', flexShrink: 0,
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
+                  padding: '20px 8px 8px',
                 }}>
-                  👤
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '13px', fontWeight: '600', color: '#1A2238' }}>{getUserName(post)}</p>
-                  <p style={{ fontSize: '11px', color: '#AAA' }}>
-                    {new Date(post.created_at).toLocaleDateString('ja-JP')}
+                  <p style={{ fontSize: '10px', color: '#fff', fontWeight: '600', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {getUserName(post)}
                   </p>
+                  <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
+                    {post.style?.slice(0, 2).map((s, i) => (
+                      <span key={i} style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '10px', padding: '1px 5px', fontSize: '8px', color: '#fff' }}>
+                        {s}
+                      </span>
+                    ))}
+                  </div>
                 </div>
+
+                <button
+                  onClick={(e) => handleLike(post, e)}
+                  style={{
+                    position: 'absolute', top: '6px', right: '6px',
+                    background: 'rgba(255,255,255,0.85)', border: 'none',
+                    borderRadius: '50%', width: '26px', height: '26px',
+                    fontSize: '12px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  {post.liked ? '❤️' : '🤍'}
+                </button>
+
                 {String(post.user_id) === userId && (
                   <button
-                    onClick={() => handleDelete(post.id)}
-                    style={{ border: 'none', background: 'none', fontSize: '16px', cursor: 'pointer', color: '#CCC' }}
+                    onClick={(e) => handleDelete(post.id, e)}
+                    style={{
+                      position: 'absolute', top: '6px', left: '6px',
+                      background: 'rgba(0,0,0,0.4)', border: 'none',
+                      borderRadius: '50%', width: '24px', height: '24px',
+                      fontSize: '11px', cursor: 'pointer', color: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
                   >
                     🗑️
                   </button>
                 )}
               </div>
-
-              {/* 画像 */}
-              {post.image_url && (
-                <img
-                  src={post.image_url}
-                  alt="コーデ"
-                  onClick={() => handleOpenPost(post)}
-                  style={{ width: '100%', maxHeight: '400px', objectFit: 'contain', background: '#F8F6F3', cursor: 'pointer' }}
-                />
-              )}
-
-              {/* コメント・スタイル */}
-              <div style={{ padding: '10px 14px' }}>
-                <p style={{ fontSize: '13px', color: '#333', lineHeight: 1.6, marginBottom: '8px' }}>
-                  {post.comment}
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '10px' }}>
-                  {post.style?.map((s, i) => (
-                    <span key={i} style={{
-                      background: '#F0EDE8', borderRadius: '20px', padding: '2px 10px',
-                      fontSize: '11px', color: '#7A6552',
-                    }}>
-                      {s}
-                    </span>
-                  ))}
-                </div>
-
-                {/* いいね・コメント */}
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                  <button
-                    onClick={() => handleLike(post)}
-                    style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}
-                  >
-                    <span style={{ fontSize: '18px' }}>{post.liked ? '❤️' : '🤍'}</span>
-                    <span style={{ fontSize: '13px', color: '#AAA' }}>{post.likes_count}</span>
-                  </button>
-                  <button
-                    onClick={() => handleOpenPost(post)}
-                    style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}
-                  >
-                    <span style={{ fontSize: '18px' }}>💬</span>
-                    <span style={{ fontSize: '13px', color: '#AAA' }}>{post.comments_count}</span>
-                  </button>
-                </div>
-              </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* 投稿詳細モーダル */}
       {selectedPost && (
         <div
           onClick={() => setSelectedPost(null)}
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end' }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'flex-end' }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '20px', width: '100%', maxHeight: '85vh', overflowY: 'auto' }}
+            style={{ background: '#fff', borderRadius: '20px 20px 0 0', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
           >
-            <div style={{ width: '36px', height: '4px', background: '#E8E8E8', borderRadius: '2px', margin: '0 auto 16px' }} />
+            <div style={{ width: '36px', height: '4px', background: '#E8E8E8', borderRadius: '2px', margin: '14px auto 0' }} />
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#F0EDE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px 8px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#F0EDE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>
                 👤
               </div>
-              <p style={{ fontSize: '13px', fontWeight: '600', color: '#1A2238' }}>{getUserName(selectedPost)}</p>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '12px', fontWeight: '600', color: '#1A2238' }}>{getUserName(selectedPost)}</p>
+                <p style={{ fontSize: '10px', color: '#AAA' }}>{new Date(selectedPost.created_at).toLocaleDateString('ja-JP')}</p>
+              </div>
+              <button onClick={() => setSelectedPost(null)} style={{ border: 'none', background: '#F5F5F5', borderRadius: '50%', width: '26px', height: '26px', fontSize: '12px', cursor: 'pointer', color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
 
             {selectedPost.image_url && (
-              <img src={selectedPost.image_url} alt="コーデ" style={{ width: '100%', borderRadius: '12px', objectFit: 'contain', maxHeight: '300px', background: '#F8F6F3', marginBottom: '12px' }} />
+              <img src={selectedPost.image_url} alt="コーデ" style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', background: '#F8F6F3' }} />
             )}
 
-            <p style={{ fontSize: '13px', color: '#333', lineHeight: 1.6, marginBottom: '8px' }}>{selectedPost.comment}</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
-              {selectedPost.style?.map((s, i) => (
-                <span key={i} style={{ background: '#F0EDE8', borderRadius: '20px', padding: '2px 10px', fontSize: '11px', color: '#7A6552' }}>{s}</span>
-              ))}
-            </div>
+            <div style={{ padding: '12px 14px' }}>
+              <div style={{ display: 'flex', gap: '14px', marginBottom: '8px' }}>
+                <button onClick={(e) => handleLike(selectedPost, e)} style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}>
+                  <span style={{ fontSize: '18px' }}>{selectedPost.liked ? '❤️' : '🤍'}</span>
+                  <span style={{ fontSize: '12px', color: '#555', fontWeight: '600' }}>{selectedPost.likes_count}</span>
+                </button>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '18px' }}>💬</span>
+                  <span style={{ fontSize: '12px', color: '#555', fontWeight: '600' }}>{selectedPost.comments_count}</span>
+                </span>
+              </div>
 
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-              <button onClick={() => handleLike(selectedPost)} style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}>
-                <span style={{ fontSize: '20px' }}>{selectedPost.liked ? '❤️' : '🤍'}</span>
-                <span style={{ fontSize: '13px', color: '#AAA' }}>{selectedPost.likes_count}</span>
-              </button>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontSize: '20px' }}>💬</span>
-                <span style={{ fontSize: '13px', color: '#AAA' }}>{selectedPost.comments_count}</span>
-              </span>
-            </div>
+              <p style={{ fontSize: '12px', color: '#333', lineHeight: 1.6, marginBottom: '6px' }}>
+                <span style={{ fontWeight: '600', color: '#1A2238', marginRight: '6px' }}>{getUserName(selectedPost)}</span>
+                {selectedPost.comment}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
+                {selectedPost.style?.map((s, i) => (
+                  <span key={i} style={{ background: '#F0EDE8', borderRadius: '20px', padding: '2px 8px', fontSize: '10px', color: '#7A6552' }}>{s}</span>
+                ))}
+              </div>
 
-            {/* コメント一覧 */}
-            <div style={{ borderTop: '1px solid #F0F0F0', paddingTop: '12px', marginBottom: '12px' }}>
-              {comments.length === 0 ? (
-                <p style={{ fontSize: '13px', color: '#CCC', textAlign: 'center', padding: '12px 0' }}>コメントはまだありません</p>
-              ) : (
-                comments.map((c) => (
-                  <div key={c.id} style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F0EDE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', flexShrink: 0 }}>👤</div>
-                    <div>
-                      <p style={{ fontSize: '12px', fontWeight: '600', color: '#1A2238', marginBottom: '2px' }}>{c.name || c.email?.split('@')[0]}</p>
-                      <p style={{ fontSize: '13px', color: '#333' }}>{c.comment}</p>
+              <div style={{ borderTop: '1px solid #F0F0F0', paddingTop: '10px', marginBottom: '10px' }}>
+                {comments.length === 0 ? (
+                  <p style={{ fontSize: '12px', color: '#CCC', textAlign: 'center', padding: '8px 0' }}>コメントはまだありません</p>
+                ) : (
+                  comments.map((c) => (
+                    <div key={c.id} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                      <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#F0EDE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', flexShrink: 0 }}>👤</div>
+                      <div>
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#1A2238', marginRight: '6px' }}>{c.name || c.email?.split('@')[0]}</span>
+                        <span style={{ fontSize: '12px', color: '#333' }}>{c.comment}</span>
+                        <p style={{ fontSize: '10px', color: '#CCC', marginTop: '2px' }}>{new Date(c.created_at).toLocaleDateString('ja-JP')}</p>
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))
+                )}
+              </div>
 
-            {/* コメント入力 */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input
-                type="text"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleComment()}
-                placeholder="コメントを入力..."
-                style={{ flex: 1, padding: '10px 14px', borderRadius: '20px', border: '1.5px solid #EEE', fontSize: '13px', outline: 'none' }}
-              />
-              <button
-                onClick={handleComment}
-                style={{ padding: '10px 16px', borderRadius: '20px', border: 'none', background: '#1A2238', color: '#fff', fontSize: '13px', cursor: 'pointer' }}
-              >
-                送信
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleComment()}
+                  placeholder="コメントを入力..."
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: '20px', border: '1.5px solid #EEE', fontSize: '12px', outline: 'none', color: '#333' }}
+                />
+                <button
+                  onClick={handleComment}
+                  style={{ padding: '8px 14px', borderRadius: '20px', border: 'none', background: '#1A2238', color: '#fff', fontSize: '12px', cursor: 'pointer', fontWeight: '600' }}
+                >
+                  送信
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -358,80 +357,71 @@ export default function CommunityPage() {
       {showNewPost && (
         <div
           onClick={() => setShowNewPost(false)}
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end' }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'flex-end' }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '20px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
+            style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '16px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}
           >
-            <div style={{ width: '36px', height: '4px', background: '#E8E8E8', borderRadius: '2px', margin: '0 auto 16px' }} />
-            <p style={{ fontSize: '16px', fontWeight: '600', color: '#1A2238', marginBottom: '16px' }}>コーデを投稿</p>
+            <div style={{ width: '36px', height: '4px', background: '#E8E8E8', borderRadius: '2px', margin: '0 auto 14px' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <p style={{ fontSize: '15px', fontWeight: '600', color: '#1A2238' }}>コーデを投稿</p>
+              <button onClick={() => setShowNewPost(false)} style={{ border: 'none', background: '#F5F5F5', borderRadius: '50%', width: '26px', height: '26px', fontSize: '12px', cursor: 'pointer', color: '#888' }}>✕</button>
+            </div>
 
-            {/* 画像アップロード */}
             {newPostImage ? (
-              <div style={{ position: 'relative', marginBottom: '12px' }}>
-                <img src={newPostImage} alt="投稿画像" style={{ width: '100%', borderRadius: '12px', objectFit: 'contain', maxHeight: '300px', background: '#F8F6F3' }} />
-                <button
-                  onClick={() => setNewPostImage(null)}
-                  style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', fontSize: '12px', cursor: 'pointer' }}
-                >
-                  ✕
-                </button>
+              <div style={{ position: 'relative', marginBottom: '10px' }}>
+                <img src={newPostImage} alt="投稿画像" style={{ width: '100%', borderRadius: '10px', objectFit: 'contain', maxHeight: '260px', background: '#F8F6F3' }} />
+                <button onClick={() => setNewPostImage(null)} style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: '22px', height: '22px', fontSize: '11px', cursor: 'pointer' }}>✕</button>
               </div>
             ) : (
               <button
                 onClick={() => imageInputRef.current?.click()}
-                style={{ width: '100%', height: '140px', borderRadius: '12px', background: '#F8F6F3', border: '2px dashed #DDD', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '12px', cursor: 'pointer', fontSize: '13px', color: '#AAA' }}
+                style={{ width: '100%', height: '120px', borderRadius: '10px', background: '#F8F6F3', border: '2px dashed #DDD', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '10px', cursor: 'pointer', fontSize: '12px', color: '#AAA', boxSizing: 'border-box' }}
               >
-                <span style={{ fontSize: '28px' }}>📷</span>画像を追加
+                <span style={{ fontSize: '26px' }}>📷</span>
+                画像を追加（任意）
               </button>
             )}
             <input ref={imageInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
 
-            {/* コメント入力 */}
             <textarea
               value={newPostComment}
               onChange={(e) => setNewPostComment(e.target.value)}
               placeholder="コーデの説明を入力..."
-              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #EEE', fontSize: '13px', outline: 'none', minHeight: '80px', resize: 'none', boxSizing: 'border-box', marginBottom: '12px' }}
+              style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #EEE', fontSize: '12px', outline: 'none', minHeight: '70px', resize: 'none', boxSizing: 'border-box', marginBottom: '10px', color: '#333' }}
             />
 
-            {/* スタイル選択 */}
-            <p style={{ fontSize: '12px', color: '#AAA', marginBottom: '8px' }}>スタイルタグ</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+            <p style={{ fontSize: '11px', color: '#AAA', marginBottom: '6px', letterSpacing: '0.04em' }}>スタイルタグ</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
               {STYLE_OPTIONS.map((s) => (
                 <button
                   key={s}
                   onClick={() => toggleStyle(s)}
                   style={{
-                    padding: '6px 12px', borderRadius: '20px',
+                    padding: '5px 10px', borderRadius: '20px',
                     border: newPostStyles.includes(s) ? 'none' : '1.5px solid #EEE',
                     background: newPostStyles.includes(s) ? '#1A2238' : '#fff',
                     color: newPostStyles.includes(s) ? '#fff' : '#555',
-                    fontSize: '12px', cursor: 'pointer',
+                    fontSize: '11px', cursor: 'pointer',
                   }}
                 >
                   {s}
                 </button>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
               <input
                 type="text"
                 value={customStyle}
                 onChange={(e) => setCustomStyle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && customStyle.trim()) {
-                    toggleStyle(customStyle.trim())
-                    setCustomStyle('')
-                  }
-                }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && customStyle.trim()) { toggleStyle(customStyle.trim()); setCustomStyle('') } }}
                 placeholder="その他のタグを追加"
-                style={{ flex: 1, padding: '8px 12px', borderRadius: '20px', border: '1.5px solid #EEE', fontSize: '12px', outline: 'none' }}
+                style={{ flex: 1, padding: '7px 12px', borderRadius: '20px', border: '1.5px solid #EEE', fontSize: '11px', outline: 'none' }}
               />
               <button
                 onClick={() => { if (customStyle.trim()) { toggleStyle(customStyle.trim()); setCustomStyle('') } }}
-                style={{ padding: '8px 14px', borderRadius: '20px', border: 'none', background: '#1A2238', color: '#fff', fontSize: '12px', cursor: 'pointer' }}
+                style={{ padding: '7px 12px', borderRadius: '20px', border: 'none', background: '#1A2238', color: '#fff', fontSize: '11px', cursor: 'pointer' }}
               >
                 追加
               </button>
@@ -440,7 +430,7 @@ export default function CommunityPage() {
             <button
               onClick={handlePost}
               disabled={loading || !newPostComment.trim()}
-              style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: loading || !newPostComment.trim() ? '#CCC' : '#1A2238', color: '#fff', fontSize: '15px', fontWeight: '600', cursor: loading || !newPostComment.trim() ? 'not-allowed' : 'pointer' }}
+              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: loading || !newPostComment.trim() ? '#CCC' : '#1A2238', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: loading || !newPostComment.trim() ? 'not-allowed' : 'pointer' }}
             >
               {loading ? '投稿中...' : '投稿する'}
             </button>
