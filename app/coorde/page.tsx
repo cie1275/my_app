@@ -47,7 +47,11 @@ export default function CoordePage() {
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null)
   const [favCoords, setFavCoords] = useState<FavoriteCoord[]>([])
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
-  const [postedIds, setPostedIds] = useState<string[]>([])
+  const [postedIds, setPostedIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    const saved = localStorage.getItem('posted_outfit_ids')
+    return saved ? JSON.parse(saved) : []
+  })
   const [closetClothes, setClosetClothes] = useState<ClothItem[]>([])
   const imageInputRef = useRef<HTMLInputElement>(null)
 
@@ -166,8 +170,10 @@ export default function CoordePage() {
   }
 
   const handlePost = async (item: HistoryItem) => {
-  if (postedIds.includes(item.id)) return  // 投稿済みはスキップ
-  setPostedIds(prev => [...prev, item.id]) // 先に追加してボタンを無効化
+  if (postedIds.includes(item.id)) return
+  const updated = [...postedIds, item.id]
+  setPostedIds(updated)
+  localStorage.setItem('posted_outfit_ids', JSON.stringify(updated))
 
   const res = await fetch('/api/posts', {
     method: 'POST',
@@ -182,7 +188,9 @@ export default function CoordePage() {
   })
   const json = await res.json()
   if (!json.success) {
-    setPostedIds(prev => prev.filter(id => id !== item.id)) // 失敗したら戻す
+    const reverted = postedIds.filter(id => id !== item.id)
+    setPostedIds(reverted)
+    localStorage.setItem('posted_outfit_ids', JSON.stringify(reverted))
   }
 }
 
