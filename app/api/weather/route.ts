@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
 
     // S3保存を待たずにすぐ返す
     return NextResponse.json({ success: true, data: weatherData });
-  } catch (error) {
+   } catch (error) {
+    console.error('天気取得エラー:', error)
     return NextResponse.json({ error: "取得に失敗しました" }, { status: 500 });
   }
 }
