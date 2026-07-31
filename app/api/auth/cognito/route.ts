@@ -1,4 +1,3 @@
-// app/api/auth/cognito/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 
@@ -25,7 +24,12 @@ const cognitoRequest = async (action: string, body: object) => {
   const text = await res.text()
   if (text.startsWith('<')) throw new Error('Cognitoへの接続に失敗しました')
   const data = JSON.parse(text)
-  if (!res.ok) throw new Error(data.message ?? action + 'に失敗しました')
+  
+  // エラーハンドリングの強化（Cognitoのエラーメッセージをそのまま返す）
+  if (!res.ok) {
+    const msg = data.message || data.__type || action + 'に失敗しました'
+    throw new Error(msg)
+  }
   return data
 }
 
@@ -36,15 +40,15 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case 'signUp': {
         const { email, password } = params
-        const username = email.split('@')[0] + '_' + Math.random().toString(36).slice(2, 8)
+        // Username に email を直接指定する（ランダム文字列生成を廃止）
         await cognitoRequest('SignUp', {
           ClientId: CLIENT_ID,
-          SecretHash: getSecretHash(username),
-          Username: username,
+          SecretHash: getSecretHash(email),
+          Username: email,
           Password: password,
           UserAttributes: [{ Name: 'email', Value: email }],
         })
-        return NextResponse.json({ success: true, username })
+        return NextResponse.json({ success: true, username: email })
       }
 
       case 'confirmSignUp': {
@@ -77,6 +81,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: '不明なアクション' }, { status: 400 })
     }
   } catch (error: any) {
+    // ターミナルに赤文字で Cognito からの生のエラーを出力
+    console.error('=== COGNITO ERROR ===', error)
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
 }
