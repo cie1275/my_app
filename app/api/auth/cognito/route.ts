@@ -40,15 +40,15 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case 'signUp': {
         const { email, password } = params
-        // Username に email を直接指定する（ランダム文字列生成を廃止）
+        const username = email.split('@')[0] + '_' + Math.random().toString(36).slice(2, 8)
         await cognitoRequest('SignUp', {
           ClientId: CLIENT_ID,
-          SecretHash: getSecretHash(email),
-          Username: email,
+          SecretHash: getSecretHash(username),
+          Username: username,
           Password: password,
           UserAttributes: [{ Name: 'email', Value: email }],
         })
-        return NextResponse.json({ success: true, username: email })
+        return NextResponse.json({ success: true, username })
       }
 
       case 'confirmSignUp': {
