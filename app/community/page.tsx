@@ -150,7 +150,7 @@ export default function CommunityPage() {
   const getUserName = (post: Post) => post.name || post.email?.split('@')[0] || 'ユーザー'
 
   return (
-    <main style={{ background: '#F8F8F8', minHeight: '100vh', paddingBottom: '80px' }}>
+    <main style={{ background: '#F8F8F8', minHeight: '100dvh', paddingBottom: '80px' }}>
 
       {/* ヘッダー */}
       <header style={{
@@ -274,7 +274,7 @@ export default function CommunityPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: '20px 20px 0 0', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
+            style={{ background: '#fff', borderRadius: '20px 20px 0 0', maxWidth: '430px', margin: '0 auto', width: '100%', maxHeight: '90dvh', overflowY: 'auto' }}
           >
             <div style={{ width: '36px', height: '4px', background: '#E8E8E8', borderRadius: '2px', margin: '14px auto 0' }} />
 
@@ -361,7 +361,7 @@ export default function CommunityPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '16px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}
+            style={{ background: '#fff', borderRadius: '20px 20px 0 0', maxWidth: '430px', margin: '0 auto', padding: '16px', width: '100%', maxHeight: '90dvh', overflowY: 'auto', boxSizing: 'border-box' }}
           >
             <div style={{ width: '36px', height: '4px', background: '#E8E8E8', borderRadius: '2px', margin: '0 auto 14px' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
