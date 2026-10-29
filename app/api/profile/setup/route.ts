@@ -4,22 +4,23 @@ import pool from '../../../../lib/db'
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, gender, height, weight, hairStyle, preferredStyles } = await request.json()
+    const { userId, name, gender, height, weight, hairStyle, preferredStyles } = await request.json()
 
     if (!userId) {
       return NextResponse.json({ error: 'ユーザーIDがありません' }, { status: 400 })
     }
-
+    
     await pool.query(
       `UPDATE users SET
-        gender = $1,
-        height = $2,
-        weight = $3,
-        hair_style = $4,
-        preferred_styles = $5,
+        name = $1,
+        gender = $2,
+        height = $3,
+        weight = $4,
+        hair_style = $5,
+        preferred_styles = $6,
         profile_completed = TRUE
-      WHERE id = $6`,
-      [gender, height, weight, hairStyle, preferredStyles, userId]
+      WHERE id = $7`,
+      [name, gender, height, weight, hairStyle, preferredStyles, userId]
     )
 
     return NextResponse.json({ success: true })

@@ -5,23 +5,18 @@ import { useState } from 'react'
 import BottomNav from '../components/BottomNav'
 import WeatherCard from '../components/WeatherCard'
 import CoordCard from '../components/CoordCard'
+import HomeSuggestCard from '../components/HomeSuggestCard'
 import ImageUpload from '../components/ImageUpload'
-
-type Cloth = {
-  id: string
-  category: string
-  color: string
-  season: string
-  style: string[]
-}
 
 export default function Home() {
   const [prefecture, setPrefecture] = useState<string>('東京都')
+  const [weather, setWeather] = useState<string>('')
+  const [temperature, setTemperature] = useState<string>('')
 
   return (
     <main style={{
       background: '#FAFAFA',
-      minHeight: '100vh',
+      minHeight: '100dvh',
       paddingBottom: '80px',
     }}>
       {/* ヘッダー */}
@@ -56,8 +51,17 @@ export default function Home() {
       {/* 現在地 */}
       <CoordCard onPrefectureFound={setPrefecture} />
 
-      {/* 天気 */}
-      <WeatherCard prefecture={prefecture} />
+      {/* 天気 (weather, temperatureが変更されたら親の状態を更新するコールバックを渡す) */}
+      <WeatherCard 
+        prefecture={prefecture} 
+        onWeatherLoaded={(w, t) => {
+          setWeather(w)
+          setTemperature(t)
+        }} 
+      />
+
+      {/* 今日のコーディネート提案 */}
+      <HomeSuggestCard weather={weather} temperature={temperature} />
 
       {/* 服のアップロード */}
       <ImageUpload

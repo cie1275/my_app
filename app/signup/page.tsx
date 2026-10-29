@@ -32,7 +32,7 @@ export default function SignUpPage() {
 
   return (
     <main style={{
-      minHeight: '100vh', background: '#FAFAFA',
+      minHeight: '100dvh', background: '#FAFAFA',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '24px',
     }}>

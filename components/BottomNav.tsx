@@ -18,10 +18,11 @@ export default function BottomNav() {
 
   return (
     <nav style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0,
+      position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+      width: '100%', maxWidth: '430px',
       background: '#fff', borderTop: '1px solid #F0F0F0',
       display: 'flex', justifyContent: 'space-around',
-      padding: '8px 0 12px', zIndex: 100,
+      padding: '8px 0 calc(12px + env(safe-area-inset-bottom))', zIndex: 100,
     }}>
       {navItems.map((item) => {
         const isActive = pathname === item.href

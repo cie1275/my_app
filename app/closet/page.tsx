@@ -113,7 +113,7 @@ export default function ClosetPage() {
   }, {})
 
   return (
-    <main style={{ background: '#FAFAFA', minHeight: '100vh', paddingBottom: '80px' }}>
+    <main style={{ background: '#FAFAFA', minHeight: '100dvh', paddingBottom: '80px' }}>
       <header style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '16px 20px 12px', background: '#fff', borderBottom: '1px solid #F0F0F0',
@@ -215,8 +215,8 @@ export default function ClosetPage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: '#fff', borderRadius: '20px 20px 0 0',
-              padding: '24px 20px', width: '100%', maxHeight: '85vh', overflowY: 'auto',
+              background: '#fff', borderRadius: '20px 20px 0 0', maxWidth: '430px', margin: '0 auto',
+              padding: '24px 20px', width: '100%', maxHeight: '85dvh', overflowY: 'auto',
             }}
           >
             <div style={{

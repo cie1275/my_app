@@ -69,6 +69,7 @@ const HAIR_STYLES_OTHER = [
 export default function ProfileSetupPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
+  const [displayName, setDisplayName] = useState('')
   const [gender, setGender] = useState('')
   const [height, setHeight] = useState('')
   const [weight, setWeight] = useState('')
@@ -86,6 +87,7 @@ export default function ProfileSetupPage() {
     const json = await res.json()
     if (json.success && json.profile) {
       const p = json.profile
+      if (p.name) setDisplayName(p.name)
       if (p.gender) setGender(p.gender)
       if (p.height) setHeight(String(p.height))
       if (p.weight) setWeight(String(p.weight))
@@ -149,6 +151,7 @@ export default function ProfileSetupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
+          name: displayName,
           gender,
           height: height ? Number(height) : null,
           weight: weight ? Number(weight) : null,
@@ -184,7 +187,7 @@ export default function ProfileSetupPage() {
 
   return (
     <main style={{
-      minHeight: '100vh', background: '#FAFAFA',
+      minHeight: '100dvh', background: '#FAFAFA',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '24px',
     }}>
@@ -217,6 +220,17 @@ export default function ProfileSetupPage() {
             <p style={{ fontSize: '15px', fontWeight: '600', color: '#1A2238', marginBottom: '4px' }}>
               基本情報を教えてください
             </p>
+
+            <div>
+              <label style={{ fontSize: '12px', color: '#AAA', display: 'block', marginBottom: '8px' }}>表示名</label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="例：Sora"
+                style={inputStyle}
+              />
+            </div>
 
             {/* 性別 */}
             <div>

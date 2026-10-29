@@ -217,7 +217,7 @@ export default function CoordePage() {
 
   return (
     <main style={{
-      background: '#FAFAFA', height: '100vh',
+      background: '#FAFAFA', height: '100dvh',
       display: 'flex', flexDirection: 'column', overflow: 'hidden',
     }}>
       <header style={{
@@ -324,7 +324,7 @@ export default function CoordePage() {
 
       {selectedItem && (
         <div onClick={() => setSelectedItem(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end' }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px', width: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '20px 20px 0 0', maxWidth: '430px', margin: '0 auto', padding: '24px 20px', width: '100%', maxHeight: '85dvh', overflowY: 'auto' }}>
             <div style={{ width: '36px', height: '4px', background: '#E8E8E8', borderRadius: '2px', margin: '0 auto 20px' }} />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

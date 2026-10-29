@@ -50,7 +50,6 @@ export async function POST(request: NextRequest) {
         })
         return NextResponse.json({ success: true, username })
       }
-
       case 'confirmSignUp': {
         const { username, code } = params
         await cognitoRequest('ConfirmSignUp', {

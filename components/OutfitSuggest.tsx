@@ -241,7 +241,7 @@ export default function OutfitSuggest({ weather, temperature, clothes, onSuggest
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 170px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 170px)' }}>
 
       {/* メッセージエリア */}
       <div style={{

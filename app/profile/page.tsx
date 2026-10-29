@@ -8,6 +8,7 @@ import { signOut } from '../../lib/cognito'
 
 type UserProfile = {
   email: string
+  name?: string
   gender?: string
   height?: number
   weight?: number
@@ -47,7 +48,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main style={{ background: '#FAFAFA', minHeight: '100vh', paddingBottom: '80px' }}>
+    <main style={{ background: '#FAFAFA', minHeight: '100dvh', paddingBottom: '80px' }}>
       <header style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '16px 20px 12px', background: '#fff', borderBottom: '1px solid #F0F0F0',
@@ -76,7 +77,7 @@ export default function ProfilePage() {
                 👤
               </div>
               <p style={{ fontSize: '14px', color: '#333', textAlign: 'center', marginBottom: '4px', fontWeight: '600' }}>
-                {profile.email}
+                {profile.name || profile.email}
               </p>
               <p style={{ fontSize: '12px', color: '#AAA', textAlign: 'center' }}>
                 {profile.gender ?? '未設定'}
