@@ -202,7 +202,7 @@ export default function CommunityPage() {
           <p style={{ fontSize: '11px', marginTop: '6px' }}>最初の投稿をしてみましょう</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2px', padding: '2px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '2px', padding: '2px', maxWidth: '640px', margin: '0 auto' }}>
           {posts.map((post) => (
             <div
               key={post.id}
