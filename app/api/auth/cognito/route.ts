@@ -1,19 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 
-const CLIENT_ID = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!
-const CLIENT_SECRET = process.env.NEXT_PUBLIC_COGNITO_CLIENT_SECRET!
-const REGION = process.env.NEXT_PUBLIC_COGNITO_REGION!
-
+// 変更：定数としてトップレベルで定義するのをやめ、関数内で安全に取得する
 const getSecretHash = (username: string) => {
+  // ここで直接環境変数を取得し、存在しない場合は空文字やフォールバックを入れるか、
+  // または .env の変数名が正しいか確認します
+  const clientSecret = process.env.NEXT_PUBLIC_COGNITO_CLIENT_SECRET;
+  const clientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID;
+
+  if (!clientSecret || !clientId) {
+    throw new Error('Cognitoの環境変数が設定されていません');
+  }
+
   return crypto
-    .createHmac('sha256', CLIENT_SECRET)
-    .update(username + CLIENT_ID)
-    .digest('base64')
+    .createHmac('sha256', clientSecret)
+    .update(username + clientId)
+    .digest('base64');
 }
 
 const cognitoRequest = async (action: string, body: object) => {
-  const res = await fetch(`https://cognito-idp.${REGION}.amazonaws.com/`, {
+  const region = process.env.NEXT_PUBLIC_COGNITO_REGION!
+  
+  const res = await fetch(`https://cognito-idp.${region}.amazonaws.com/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-amz-json-1.1',
@@ -25,7 +33,6 @@ const cognitoRequest = async (action: string, body: object) => {
   if (text.startsWith('<')) throw new Error('Cognitoへの接続に失敗しました')
   const data = JSON.parse(text)
   
-  // エラーハンドリングの強化（Cognitoのエラーメッセージをそのまま返す）
   if (!res.ok) {
     const msg = data.message || data.__type || action + 'に失敗しました'
     throw new Error(msg)
@@ -35,6 +42,7 @@ const cognitoRequest = async (action: string, body: object) => {
 
 export async function POST(request: NextRequest) {
   try {
+    const clientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!
     const { action, ...params } = await request.json()
 
     switch (action) {
@@ -42,7 +50,7 @@ export async function POST(request: NextRequest) {
         const { email, password } = params
         const username = email.split('@')[0] + '_' + Math.random().toString(36).slice(2, 8)
         await cognitoRequest('SignUp', {
-          ClientId: CLIENT_ID,
+          ClientId: clientId,
           SecretHash: getSecretHash(username),
           Username: username,
           Password: password,
@@ -53,7 +61,7 @@ export async function POST(request: NextRequest) {
       case 'confirmSignUp': {
         const { username, code } = params
         await cognitoRequest('ConfirmSignUp', {
-          ClientId: CLIENT_ID,
+          ClientId: clientId,
           SecretHash: getSecretHash(username),
           Username: username,
           ConfirmationCode: code,
@@ -65,7 +73,7 @@ export async function POST(request: NextRequest) {
         const { email, password } = params
         const data = await cognitoRequest('InitiateAuth', {
           AuthFlow: 'USER_PASSWORD_AUTH',
-          ClientId: CLIENT_ID,
+          ClientId: clientId,
           AuthParameters: {
             USERNAME: email,
             PASSWORD: password,
@@ -80,7 +88,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: '不明なアクション' }, { status: 400 })
     }
   } catch (error: any) {
-    // ターミナルに赤文字で Cognito からの生のエラーを出力
     console.error('=== COGNITO ERROR ===', error)
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
